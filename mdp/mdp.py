@@ -26,7 +26,9 @@ class State(object):
 
 
 class Action(object):
-    pass
+
+    def __init__(self, label):
+        self.__label = label
 
 
 class MDP(object):
