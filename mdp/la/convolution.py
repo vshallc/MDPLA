@@ -33,6 +33,8 @@ def convolute_onepiece(x, F, G):
         (i.subs(y, b_f) - i.subs(y, x - b_g), a_f + b_g, b_f + a_g)
     ]
 
+def merge_pieces_list(main_pieces, new_pieces):
+
 
 def convolute_piecewise(pw_f: PiecewisePolynomial, pw_g: PiecewisePolynomial):
     x = sympy.sympify('x')
@@ -44,17 +46,21 @@ def convolute_piecewise(pw_f: PiecewisePolynomial, pw_g: PiecewisePolynomial):
             g = pw_g.polynomial_pieces[j]
             df = f.degree()
             if df == 0:
-                F = sympy.sympify(f.coef[0])
+                f_i = sympy.sympify(f.coef[0])
             elif df == 1:
-                F = sympy.sympify(f.coef[0] + f.coef[1] * x)
+                f_i = sympy.sympify(f.coef[0] + f.coef[1] * x)
             else:
                 raise ValueError('The piece must be constant or linear')
             dg = g.degree()
             if dg == 0:
-                G = sympy.sympify(g.coef[0])
+                g_j = sympy.sympify(g.coef[0])
             elif dg == 1:
-                G = sympy.sympify(g.coef[0] + g.coef[1] * x)
+                g_j = sympy.sympify(g.coef[0] + g.coef[1] * x)
             else:
                 raise ValueError('The piece must be constant or linear')
-            if F == 0 or G == 0:
+            if f_i == 0 or g_j == 0:
                 continue
+            f_piece = (f_i, pw_f.bounds[i], pw_f.bounds[i + 1])
+            g_piece = (g_j, pw_g.bounds[i], pw_g.bounds[i + 1])
+            convolute_result = convolute_onepiece(x, f_piece, g_piece)
+

@@ -21,6 +21,10 @@ def pwc_function_approximation(linear_piece, left_bound, right_bound, error_tole
         bounds_result.append(left_bound + (i + 1) * delta_x)
     return pwc_result, bounds_result
 
+def merge_bounds(bounds1, bounds2):
+    seen = set()
+    seen_add = seen.add
+    return sorted([b for b in bounds1 + bounds2 if not (b in seen or seen_add(b))])
 
 class PiecewisePolynomial(object):
     def __init__(self, polynomial_pieces, bounds):
@@ -53,6 +57,20 @@ class PiecewisePolynomial(object):
         for i in range(1, len(self.__bounds)):
             condition_list.append((self.__bounds[i - 1] <= x) & (x < self.__bounds[i]))
         return np.piecewise(x, condition_list, self.__polynomial_pieces)
+
+    def add(self, piecewise_polynomial):
+        new_bounds = merge_bounds(self.bounds, piecewise_polynomial.bounds)
+        new_polynomial_pieces = []
+        bounds1 = self.bounds
+        bounds2 = piecewise_polynomial.bounds
+        if new_bounds[0] < bounds1:
+            bounds1 = new_bounds[0]
+        i = 0
+        j = 0
+        for n in range(0, len(new_bounds) - 1):
+            p = P([0])
+            # if new_bounds[n]
+            # new_polynomial_pieces.append()
 
     def to_constant_function_approximation(self):
         new_polynomial_pieces = []
