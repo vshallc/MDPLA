@@ -1,11 +1,27 @@
 import math
 import numpy as np
-from numpy.polynomial import Polynomial as P
 import sympy
 import sympy.abc
 from sympy.polys import Poly
 
 x = sympy.sympify('x')
+
+
+def max_onepiece(x, f: Poly, g: Poly, l, u):
+    roots = sorted(set((f - g).real_roots()))
+    new_polynomial_pieces = []
+    new_bounds = [l]
+    for r in roots:
+        if l < r < u:
+            m = (r + new_bounds[-1]) / 2
+            if f.subs(x, m) >= g.subs(x, m):
+                new_polynomial_pieces.append(f)
+            else:
+                new_polynomial_pieces.append(g)
+            new_bounds.append(r)
+    new_bounds.append(u)
+    return PiecewisePolynomial(new_polynomial_pieces, new_bounds)
+
 
 def constant_function_approximation(linear_piece, left_bound, right_bound):
     return linear_piece.subs(x, (left_bound + right_bound) / 2)
@@ -28,8 +44,8 @@ def pwc_function_approximation(linear_piece, left_bound, right_bound, error_tole
 
 
 # def merge_bounds(bounds1, bounds2):
-#     seen = set()
-#     seen_add = seen.add
+# seen = set()
+# seen_add = seen.add
 #     return sorted([b for b in bounds1 + bounds2 if not (b in seen or seen_add(b))])
 
 
@@ -60,10 +76,11 @@ class PiecewisePolynomial(object):
 
     def evaluate(self, x):
         # x format: numpy.array
+        v = np.array([x])
         condition_list = []
         for i in range(1, len(self.__bounds)):
-            condition_list.append((self.__bounds[i - 1] <= x) & (x < self.__bounds[i]))
-        return np.piecewise(x, condition_list, self.__polynomial_pieces)
+            condition_list.append((self.__bounds[i - 1] <= v) & (v < self.__bounds[i]))
+        return np.piecewise(v, condition_list, self.__polynomial_pieces)
 
     def __add__(self, other):
         new_bounds = []
@@ -145,3 +162,64 @@ class PiecewisePolynomial(object):
             new_polynomial_pieces.extend(pwc[0])
             new_bounds.extend(pwc_bounds)
         return PiecewisePolynomial(new_polynomial_pieces, new_bounds)
+
+
+def max_piecewise(x, pw_f: PiecewisePolynomial, pw_g: PiecewisePolynomial):
+    new_bounds = []
+    new_polynomial_pieces = []
+    pieces1 = iter(pw_f.polynomial_pieces)
+    pieces2 = iter(pw_g.polynomial_pieces)
+    bounds1 = iter(pw_f.bounds)
+    bounds2 = iter(pw_g.bounds)
+    b1_next = next(bounds1)
+    b2_next = next(bounds2)
+    if b1_next < b2_next:
+        new_bounds.append(b1_next)
+        b1_next = next(bounds1)
+        p1 = next(pieces1)
+        p2 = Poly('0', x)
+    elif b1_next > b2_next:
+        new_bounds.append(b2_next)
+        b2_next = next(bounds2)
+        p1 = Poly('0', x)
+        p2 = next(pieces2)
+    else:
+        new_bounds.append(b1_next)
+        b1_next = next(bounds1)
+        b2_next = next(bounds2)
+        p1 = next(pieces1)
+        p2 = next(pieces2)
+    b1_flag = b2_flag = True
+    while b1_flag or b2_flag:
+        new_polynomial_pieces.append(p1 + p2)
+        if b1_next < b2_next:
+            p1 = next(pieces1, Poly('0', x))
+            new_bounds.append(b1_next)
+            try:
+                b1_next = next(bounds1)
+            except StopIteration:
+                b1_next = float('inf')
+                b1_flag = False
+        elif b1_next > b2_next:
+            p2 = next(pieces2, Poly('0', x))
+            new_bounds.append(b2_next)
+            try:
+                b2_next = next(bounds2)
+            except StopIteration:
+                b2_next = float('inf')
+                b2_flag = False
+        else:
+            p1 = next(pieces1, Poly('0', x))
+            p2 = next(pieces2, Poly('0', x))
+            new_bounds.append(b1_next)
+            try:
+                b1_next = next(bounds1)
+            except StopIteration:
+                b1_next = float('inf')
+                b1_flag = False
+            try:
+                b2_next = next(bounds2)
+            except StopIteration:
+                b2_next = float('inf')
+                b2_flag = False
+    return PiecewisePolynomial(new_polynomial_pieces, new_bounds)

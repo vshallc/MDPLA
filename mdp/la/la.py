@@ -6,7 +6,6 @@ The Lazy Approximation algorithm
 
 import math
 import numpy as np
-from numpy.polynomial import Polynomial as P
 import sympy
 import sympy.abc
 import sympy.functions

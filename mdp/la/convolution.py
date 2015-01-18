@@ -28,7 +28,7 @@ def convolute_onepiece(x, F, G):
     if b_f - a_f > b_g - a_g:
         f, a_f, b_f, g, a_g, b_g = g, a_g, b_g, f, a_f, b_f
     if a_f == b_f:
-        return PiecewisePolynomial([P(Poly(f.subs(x, a_f) * g.subs(x, x - a_f), x).all_coeffs()[::-1])], [a_f + a_g, a_f + b_g])
+        return PiecewisePolynomial([Poly(f.subs(x, a_f) * g.subs(x, x - a_f), x)], [a_f + a_g, a_f + b_g])
     y = sympy.Dummy('y')
     i = sympy.integrate(f.subs(x, y) * g.subs(x, x - y), y)
     return PiecewisePolynomial([Poly(i.subs(y, x - a_g) - i.subs(y, a_f), x),
@@ -40,14 +40,13 @@ def convolute_onepiece(x, F, G):
                                 b_f + b_g])
 
 
-def convolute_piecewise(pw_f: PiecewisePolynomial, pw_g: PiecewisePolynomial):
-    x = sympy.sympify('x')
-    h = PiecewisePolynomial([Poly('0', x)], [min(pw_f.bounds[0], pw_g.bounds[0]), max(pw_f.bounds[-1], pw_g.bounds[-1])])
+def convolute_piecewise(x, pw_f: PiecewisePolynomial, pw_g: PiecewisePolynomial):
+    h = PiecewisePolynomial([Poly('0', x)], [pw_f.bounds[0] + pw_g.bounds[0], pw_f.bounds[-1] + pw_g.bounds[-1]])
     for i in range(0, pw_f.pieces):
         for j in range(0, pw_g.pieces):
             f = pw_f.polynomial_pieces[i]
             g = pw_g.polynomial_pieces[j]
-            if f == 0 or g == 0:
+            if f.is_zero or g.is_zero:
                 continue
             f_piece = (f, pw_f.bounds[i], pw_f.bounds[i + 1])
             g_piece = (g, pw_g.bounds[j], pw_g.bounds[j + 1])
