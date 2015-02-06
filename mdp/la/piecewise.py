@@ -1,8 +1,10 @@
 import math
+from numbers import Number
 import numpy as np
 import sympy
 import sympy.abc
 from sympy.polys import Poly
+import collections
 
 x = sympy.sympify('x')
 
@@ -57,10 +59,14 @@ class PiecewisePolynomial(object):
         self.__polynomial_pieces = polynomial_pieces
         self.__bounds = bounds
         self.__pieces = len(polynomial_pieces)
+        self.simplify()
 
     def __call__(self, x):
         # x format: numpy.array
         return self.evaluate(x)
+
+    def __str__(self):
+        return str([(str(self.polynomial_pieces[i]), self.bounds[i], self.bounds[i + 1]) for i in range(self.pieces)])
 
     @property
     def polynomial_pieces(self):
@@ -80,67 +86,167 @@ class PiecewisePolynomial(object):
         condition_list = []
         for i in range(1, len(self.__bounds)):
             condition_list.append((self.__bounds[i - 1] <= v) & (v < self.__bounds[i]))
+        # print('v: ', v)
+        # print('bounds: ', self.__bounds)
+        # print('cond: ', condition_list)
+        # cab = [isinstance(piece, collections.Callable) for piece in self.__polynomial_pieces]
+        # print('callable: ', cab)
+        # for piece in self.__polynomial_pieces:
+        #     print(piece)
+        # for vv in v:
+        #     print('vv: ', vv)
         return np.piecewise(v, condition_list, self.__polynomial_pieces)
 
     def __add__(self, other):
-        new_bounds = []
-        new_polynomial_pieces = []
-        pieces1 = iter(self.polynomial_pieces)
-        pieces2 = iter(other.polynomial_pieces)
-        bounds1 = iter(self.bounds)
-        bounds2 = iter(other.bounds)
-        b1_next = next(bounds1)
-        b2_next = next(bounds2)
-        if b1_next < b2_next:
-            new_bounds.append(b1_next)
-            b1_next = next(bounds1)
-            p1 = next(pieces1)
-            p2 = Poly('0', x)
-        elif b1_next == b2_next:
-            new_bounds.append(b1_next)
+        if isinstance(other, self.__class__):
+            new_bounds = []
+            new_polynomial_pieces = []
+            pieces1 = iter(self.polynomial_pieces)
+            pieces2 = iter(other.polynomial_pieces)
+            bounds1 = iter(self.bounds)
+            bounds2 = iter(other.bounds)
             b1_next = next(bounds1)
             b2_next = next(bounds2)
-            p1 = next(pieces1)
-            p2 = next(pieces2)
-        else:
-            new_bounds.append(b2_next)
-            b2_next = next(bounds2)
-            p1 = Poly('0', x)
-            p2 = next(pieces2)
-        b1_flag = b2_flag = True
-        while b1_flag or b2_flag:
-            new_polynomial_pieces.append(p1 + p2)
             if b1_next < b2_next:
-                p1 = next(pieces1, Poly('0', x))
                 new_bounds.append(b1_next)
-                try:
-                    b1_next = next(bounds1)
-                except StopIteration:
-                    b1_next = float('inf')
-                    b1_flag = False
-            elif b1_next > b2_next:
-                p2 = next(pieces2, Poly('0', x))
-                new_bounds.append(b2_next)
-                try:
-                    b2_next = next(bounds2)
-                except StopIteration:
-                    b2_next = float('inf')
-                    b2_flag = False
+                b1_next = next(bounds1)
+                p1 = next(pieces1)
+                p2 = Poly('0', x)
+            elif b1_next == b2_next:
+                new_bounds.append(b1_next)
+                b1_next = next(bounds1)
+                b2_next = next(bounds2)
+                p1 = next(pieces1)
+                p2 = next(pieces2)
             else:
-                p1 = next(pieces1, Poly('0', x))
-                p2 = next(pieces2, Poly('0', x))
+                new_bounds.append(b2_next)
+                b2_next = next(bounds2)
+                p1 = Poly('0', x)
+                p2 = next(pieces2)
+            b1_flag = b2_flag = True
+            while b1_flag or b2_flag:
+                new_polynomial_pieces.append(p1 + p2)
+                if b1_next < b2_next:
+                    p1 = next(pieces1, Poly('0', x))
+                    new_bounds.append(b1_next)
+                    try:
+                        b1_next = next(bounds1)
+                    except StopIteration:
+                        b1_next = float('inf')
+                        b1_flag = False
+                elif b1_next > b2_next:
+                    p2 = next(pieces2, Poly('0', x))
+                    new_bounds.append(b2_next)
+                    try:
+                        b2_next = next(bounds2)
+                    except StopIteration:
+                        b2_next = float('inf')
+                        b2_flag = False
+                else:
+                    p1 = next(pieces1, Poly('0', x))
+                    p2 = next(pieces2, Poly('0', x))
+                    new_bounds.append(b1_next)
+                    try:
+                        b1_next = next(bounds1)
+                    except StopIteration:
+                        b1_next = float('inf')
+                        b1_flag = False
+                    try:
+                        b2_next = next(bounds2)
+                    except StopIteration:
+                        b2_next = float('inf')
+                        b2_flag = False
+            return PiecewisePolynomial(new_polynomial_pieces, new_bounds)
+        elif isinstance(other, Number):
+            new_bounds = self.__bounds.copy()
+            new_polynomial_pieces = [p + other for p in self.__polynomial_pieces]
+            return PiecewisePolynomial(new_polynomial_pieces, new_bounds)
+        else:
+            raise TypeError("unsupported operand type(s) for +: '{}' and '{}'".format(self.__class__, type(other)))
+
+    __radd__ = __add__
+
+    def __mul__(self, other):
+        if isinstance(other, self.__class__):
+            new_bounds = []
+            new_polynomial_pieces = []
+            pieces1 = iter(self.polynomial_pieces)
+            pieces2 = iter(other.polynomial_pieces)
+            bounds1 = iter(self.bounds)
+            bounds2 = iter(other.bounds)
+            b1_next = next(bounds1)
+            b2_next = next(bounds2)
+            if b1_next < b2_next:
                 new_bounds.append(b1_next)
-                try:
-                    b1_next = next(bounds1)
-                except StopIteration:
-                    b1_next = float('inf')
-                    b1_flag = False
-                try:
-                    b2_next = next(bounds2)
-                except StopIteration:
-                    b2_next = float('inf')
-                    b2_flag = False
-        return PiecewisePolynomial(new_polynomial_pieces, new_bounds)
+                b1_next = next(bounds1)
+                p1 = next(pieces1)
+                p2 = Poly('0', x)
+            elif b1_next == b2_next:
+                new_bounds.append(b1_next)
+                b1_next = next(bounds1)
+                b2_next = next(bounds2)
+                p1 = next(pieces1)
+                p2 = next(pieces2)
+            else:
+                new_bounds.append(b2_next)
+                b2_next = next(bounds2)
+                p1 = Poly('0', x)
+                p2 = next(pieces2)
+            b1_flag = b2_flag = True
+            while b1_flag or b2_flag:
+                new_polynomial_pieces.append(p1 * p2)
+                if b1_next < b2_next:
+                    p1 = next(pieces1, Poly('0', x))
+                    new_bounds.append(b1_next)
+                    try:
+                        b1_next = next(bounds1)
+                    except StopIteration:
+                        b1_next = float('inf')
+                        b1_flag = False
+                elif b1_next > b2_next:
+                    p2 = next(pieces2, Poly('0', x))
+                    new_bounds.append(b2_next)
+                    try:
+                        b2_next = next(bounds2)
+                    except StopIteration:
+                        b2_next = float('inf')
+                        b2_flag = False
+                else:
+                    p1 = next(pieces1, Poly('0', x))
+                    p2 = next(pieces2, Poly('0', x))
+                    new_bounds.append(b1_next)
+                    try:
+                        b1_next = next(bounds1)
+                    except StopIteration:
+                        b1_next = float('inf')
+                        b1_flag = False
+                    try:
+                        b2_next = next(bounds2)
+                    except StopIteration:
+                        b2_next = float('inf')
+                        b2_flag = False
+            return PiecewisePolynomial(new_polynomial_pieces, new_bounds)
+        elif isinstance(other, Number):
+            new_bounds = self.__bounds.copy()
+            new_polynomial_pieces = [p * other for p in self.__polynomial_pieces]
+            return PiecewisePolynomial(new_polynomial_pieces, new_bounds)
+        else:
+            raise TypeError("unsupported operand type(s) for +: '{}' and '{}'".format(self.__class__, type(other)))
+
+    __rmul__ = __mul__
+
+    def simplify(self):
+        if self.pieces > 1:
+            i = 0
+            p = self.pieces - 1
+            while i < p:
+                if self.polynomial_pieces[i] == self.polynomial_pieces[i + 1]:
+                    del self.polynomial_pieces[i]
+                    del self.bounds[i + 1]
+                    p -= 1
+                else:
+                    i += 1
+            self.__pieces = p + 1
 
     def to_constant_function_approximation(self):
         new_polynomial_pieces = []
@@ -164,7 +270,35 @@ class PiecewisePolynomial(object):
         return PiecewisePolynomial(new_polynomial_pieces, new_bounds)
 
 
+def max_piece(x, f, g, lower, upper):
+    roots = (f - g).real_roots()
+    try:
+        roots = [float(r) for r in roots if lower < r < upper]
+    except TypeError:
+        roots = []
+    if roots:
+        p = []
+        b = []
+        roots = [lower] + roots + [upper]
+        for i in range(1, len(roots)):
+            mid = (roots[i - 1] + roots[i]) / 2
+            if f(mid) > g(mid):
+                p.append(f)
+            else:
+                p.append(g)
+            b.append(roots[i])
+        return p, b
+    else:
+        mid = (lower + upper) / 2
+        # return [f], [upper] if f(mid) > g(mid) else [g], [upper]
+        if f(mid) > g(mid):
+            return [f], [upper]
+        else:
+            return [g], [upper]
+
+
 def max_piecewise(x, pw_f: PiecewisePolynomial, pw_g: PiecewisePolynomial):
+    # for linear pieces only
     new_bounds = []
     new_polynomial_pieces = []
     pieces1 = iter(pw_f.polynomial_pieces)
@@ -191,27 +325,36 @@ def max_piecewise(x, pw_f: PiecewisePolynomial, pw_g: PiecewisePolynomial):
         p2 = next(pieces2)
     b1_flag = b2_flag = True
     while b1_flag or b2_flag:
-        new_polynomial_pieces.append(p1 + p2)
+        # new_polynomial_pieces.append(p1 + p2)
         if b1_next < b2_next:
+            p, b = max_piece(x, p1, p2, new_bounds[-1], b1_next)
+            new_polynomial_pieces.extend(p)
+            new_bounds.extend(b)
             p1 = next(pieces1, Poly('0', x))
-            new_bounds.append(b1_next)
+            # new_bounds.append(b1_next)
             try:
                 b1_next = next(bounds1)
             except StopIteration:
                 b1_next = float('inf')
                 b1_flag = False
         elif b1_next > b2_next:
+            p, b = max_piece(x, p1, p2, new_bounds[-1], b2_next)
+            new_polynomial_pieces.extend(p)
+            new_bounds.extend(b)
             p2 = next(pieces2, Poly('0', x))
-            new_bounds.append(b2_next)
+            # new_bounds.append(b2_next)
             try:
                 b2_next = next(bounds2)
             except StopIteration:
                 b2_next = float('inf')
                 b2_flag = False
         else:
+            p, b = max_piece(x, p1, p2, new_bounds[-1], b1_next)
+            new_polynomial_pieces.extend(p)
+            new_bounds.extend(b)
             p1 = next(pieces1, Poly('0', x))
             p2 = next(pieces2, Poly('0', x))
-            new_bounds.append(b1_next)
+            # new_bounds.append(b1_next)
             try:
                 b1_next = next(bounds1)
             except StopIteration:

@@ -24,6 +24,13 @@ slightly changed for our use
 def convolute_onepiece(x, F, G):
     f, a_f, b_f = F
     g, a_g, b_g = G
+    f = f.as_expr()
+    g = g.as_expr()
+    # special change for lazy approximation
+    f = f.subs(x, -x)
+    a_f, b_f = -b_f, -a_f
+    # print('f: ', f, ' a_f: ', a_f, ' b_f: ', b_f)
+    # print('g: ', g, ' a_g: ', a_g, ' b_g: ', b_g)
     # make sure ranges are in order, swap values if necessary
     if b_f - a_f > b_g - a_g:
         f, a_f, b_f, g, a_g, b_g = g, a_g, b_g, f, a_f, b_f
@@ -40,16 +47,16 @@ def convolute_onepiece(x, F, G):
                                 b_f + b_g])
 
 
-def convolute_piecewise(x, pw_f: PiecewisePolynomial, pw_g: PiecewisePolynomial):
-    h = PiecewisePolynomial([Poly('0', x)], [pw_f.bounds[0] + pw_g.bounds[0], pw_f.bounds[-1] + pw_g.bounds[-1]])
-    for i in range(0, pw_f.pieces):
-        for j in range(0, pw_g.pieces):
-            f = pw_f.polynomial_pieces[i]
-            g = pw_g.polynomial_pieces[j]
+def convolute_piecewise(t, P: PiecewisePolynomial, V: PiecewisePolynomial):
+    h = PiecewisePolynomial([Poly('0', t)], [P.bounds[0] + V.bounds[0], P.bounds[-1] + V.bounds[-1]])
+    for i in range(0, P.pieces):
+        for j in range(0, V.pieces):
+            f = P.polynomial_pieces[i]
+            g = V.polynomial_pieces[j]
             if f.is_zero or g.is_zero:
                 continue
-            f_piece = (f, pw_f.bounds[i], pw_f.bounds[i + 1])
-            g_piece = (g, pw_g.bounds[j], pw_g.bounds[j + 1])
-            piecewise_result = convolute_onepiece(x, f_piece, g_piece)
+            f_piece = (f, P.bounds[i], P.bounds[i + 1])
+            g_piece = (g, V.bounds[j], V.bounds[j + 1])
+            piecewise_result = convolute_onepiece(t, f_piece, g_piece)
             h += piecewise_result
     return h
