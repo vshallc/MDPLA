@@ -6,7 +6,7 @@ import sympy.abc
 from sympy.polys import Poly
 import collections
 
-x = sympy.sympify('x')
+x = sympy.Symbol('x', real=True)
 
 
 def max_onepiece(x, f: Poly, g: Poly, l, u):
@@ -187,6 +187,21 @@ class PiecewisePolynomial(object):
                 p2 = next(pieces2)
             b1_flag = b2_flag = True
             while b1_flag or b2_flag:
+                '''
+                print('p1',p1)
+                print('p2',p2)
+                gens = sympy.polys.polyutils._unify_gens(p1.gens, p2.gens)
+                print('type1',type(p1.gens[0]))
+                print('type2',type(p2.gens[0]))
+                print('gen12',p1.gens,p2.gens)
+                print('gens',gens,len(gens))
+                print('dom12',p1.rep.dom,p2.rep.dom)
+                dom = p1.rep.dom.unify_with_symbols(p2.rep.dom,gens)
+                print('dom',dom)
+                # dom = p1.rep.dom.unify(p2.rep.dom, gens)
+                p_tmp = p1*p2
+                new_polynomial_pieces.append(p_tmp)
+                '''
                 new_polynomial_pieces.append(p1 * p2)
                 if b1_next < b2_next:
                     p1 = next(pieces1, Poly('0', x))

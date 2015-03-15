@@ -8,7 +8,7 @@ from sympy.polys import Poly
 
 
 def init_mdp():
-    x = sympy.sympify('x')
+    x = sympy.Symbol('x', real=True)
     state = [State('Home'),
              State('x2'),
              State('Work')]

@@ -9,14 +9,14 @@ from la.piecewise import *
 ABS = 0
 REL = 1
 # variable
-x = sympy.sympify('x')
-y = sympy.sympify('y')
+x = sympy.Symbol('x', real=True)
+y = sympy.Symbol('y', real=True)
 
 
 def U_ABS(t, P, V):
-    h = P * V
     # print('P: ', P)
     # print('V: ', V)
+    h = P * V
     # print('h: ', h)
     i = [sympy.integrate(p.as_expr(), t) for p in h.polynomial_pieces]
     return PiecewisePolynomial([Poly(sum([i[j].subs(t, h.bounds[j + 1]) - i[j].subs(t, h.bounds[j])
@@ -148,6 +148,7 @@ class MDP(object):
 
 
 def value_iteration(mdp):
+    # V(x,t) = sup_{t'>=t}(\int^{t'}_t K(x,s) ds + V_bar(x,t'))
     # u1 = dict([(s, PiecewisePolynomial([Poly('0', x)], [7, 14])) for s in mdp.states])
     u1 = dict()
     u1[mdp.states[0]] = PiecewisePolynomial([Poly('0', x)], [7, 14])
@@ -177,16 +178,32 @@ def value_iteration(mdp):
 
 def state_value(s: State, r, v):
     # This is only for piecewise linear function
+    # for dawdling
     v_b = v_bar(s, r, v)
     new_bounds = v_b.bounds.copy()
     new_polynomial_pieces = v_b.polynomial_pieces.copy()
     min_v = v_b(new_bounds[-1])
-    for i in range(len(new_bounds) - 1, -1, -1):
-        tmp = v_b(new_bounds[i])
+    count = len(new_bounds) - 2  # from the penultimate turning point
+    while count > 0:
+        print('count',new_bounds[count])
+        tmp = v_b(new_bounds[count])
+        print('tmp',type(tmp))
+        print('min_v',min_v,type(min_v))
         if tmp < min_v:
-            new_polynomial_pieces[i] = Poly(min_v, x)
+            roots = sympy.solve(new_polynomial_pieces[count] - new_polynomial_pieces[count - 1])
+            if roots:
+                root = roots[0]
+                if new_bounds[count - 1] < root < new_bounds[count + 1]:
+                    new_bounds[count] = root
+                    new_polynomial_pieces[count] = Poly(min_v, x)
+                    count -= 1
+                    continue
+            del new_polynomial_pieces[count - 1]
+            del new_bounds[count]
+            count -= 1
         else:
             min_v = tmp
+            count -= 1
     return PiecewisePolynomial(new_polynomial_pieces, new_bounds)
 
 
