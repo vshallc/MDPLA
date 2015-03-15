@@ -30,11 +30,13 @@ def constant_function_approximation(linear_piece, left_bound, right_bound):
 
 
 def pwc_function_approximation(linear_piece, left_bound, right_bound, error_tolerance):
-    if linear_piece.degree() == 0:
+    # print(linear_piece)
+    if linear_piece.degree() <= 0:
         return [linear_piece], [left_bound, right_bound]
     elif linear_piece.degree() >= 2:
         raise ValueError('The function must be constant or linear.')
     a = linear_piece.LC()
+    # print('a=', a, 'lb=', left_bound, 'rb=', right_bound)
     piece_num = math.ceil((math.fabs(a) * (right_bound - left_bound)) / (2 * error_tolerance))
     delta_x = (right_bound - left_bound) / piece_num
     pwc_result = []
@@ -86,15 +88,6 @@ class PiecewisePolynomial(object):
         condition_list = []
         for i in range(1, len(self.__bounds)):
             condition_list.append((self.__bounds[i - 1] <= v) & (v < self.__bounds[i]))
-        # print('v: ', v)
-        # print('bounds: ', self.__bounds)
-        # print('cond: ', condition_list)
-        # cab = [isinstance(piece, collections.Callable) for piece in self.__polynomial_pieces]
-        # print('callable: ', cab)
-        # for piece in self.__polynomial_pieces:
-        #     print(piece)
-        # for vv in v:
-        #     print('vv: ', vv)
         return np.piecewise(v, condition_list, self.__polynomial_pieces)
 
     def __add__(self, other):
@@ -234,6 +227,15 @@ class PiecewisePolynomial(object):
             raise TypeError("unsupported operand type(s) for +: '{}' and '{}'".format(self.__class__, type(other)))
 
     __rmul__ = __mul__
+
+    def __eq__(self, other):
+        if not isinstance(other, self.__class__):
+            return False
+        return (self.__polynomial_pieces, self.__bounds, self.__pieces) == \
+               (other.polynomial_pieces, other.bounds, other.pieces)
+
+    def __hash__(self):
+        return hash(tuple(self.__polynomial_pieces))^hash(tuple(self.bounds))^hash(self.pieces)
 
     def simplify(self):
         if self.pieces > 1:

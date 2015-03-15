@@ -1,4 +1,4 @@
-from la.convolution import *
+import matplotlib.pyplot as plt
 from la.la import *
 from la.piecewise import *
 from mdp import *
@@ -7,12 +7,8 @@ import sympy.abc
 from sympy.polys import Poly
 
 
-def main():
+def init_mdp():
     x = sympy.sympify('x')
-    # p1 = P([0, 1])
-    # p2 = P([0, -1])
-    # pp = PiecewisePolynomial([p1, p2], [-10, 0, 10])
-    # print(pp(np.array([-1, 5])))
     state = [State('Home'),
              State('x2'),
              State('Work')]
@@ -83,31 +79,25 @@ def main():
     state[0].add_action('driving', miu[2], likelihood[2])  # Highway - rush hour
     state[0].add_action('driving', miu[3], likelihood[3])  # Highway - off peak
     state[1].add_action('driving', miu[4], likelihood[4])  # Drive on backroad
-
     # assign value functions
     # state[0].value_function = PiecewisePolynomial([Poly('0', x)], [7, 14])
     # state[1].value_function = PiecewisePolynomial([Poly('0', x)], [7, 14])
     # state[2].value_function = PiecewisePolynomial([Poly('0', x)], [7, 14])
-
-    # for testing2
-    # a = PiecewisePolynomial([Poly('0', x), Poly('1', x), Poly('1', x), Poly('0', x)],
-    #                         [float('-inf'), -1, 0, 1, float('inf')])
-    # b = PiecewisePolynomial([Poly('0', x), Poly('x + 1', x), Poly('-x + 1', x), Poly('0', x)],
-    #                         [float('-inf'), -1, 0, 1, 100])
-    # print('a')
-    # for i in range(0, a.pieces):
-    #     print(str(a.polynomial_pieces[i]) + ' ' + str(a.bounds[i:i + 2]))
-    # a = 1.0 + a
-    # print('a simplified')
-    # for i in range(0, a.pieces):
-    #     print(str(a.polynomial_pieces[i]) + ' ' + str(a.bounds[i:i + 2]))
-    # aa = a(0)
-    # print(aa)
-    # test MDP
     mdp = MDP(state, miu, reward, state[0], {state[2]})
+    return mdp
+
+
+def main():
+    mdp = init_mdp()
+    # test MDP
     u = value_iteration(mdp)
     for s in u:
         print(s, u[s])
+    t = u[mdp.states[0]].bounds
+    v = [u[mdp.states[0]](tt) for tt in t]
+    print(t, v)
+    plt.plot(t, v)
+    plt.show()
     # c1 = mdp.V(None, x, a)
     # print('c1')
     # for i in range(0, c1.pieces):

@@ -153,6 +153,8 @@ def value_iteration(mdp):
     u1[mdp.states[0]] = PiecewisePolynomial([Poly('0', x)], [7, 14])
     u1[mdp.states[1]] = PiecewisePolynomial([Poly('0', x)], [7, 14])
     u1[mdp.states[2]] = PiecewisePolynomial([Poly('1', x), Poly('-x + 12', x), Poly('0', x)], [7, 11, 12, 14])
+    # for s in mdp.states:
+    #     print(u1[s])
     r = mdp.rewards
     terminals = mdp.terminal_state_set
     i = 0
@@ -166,9 +168,9 @@ def value_iteration(mdp):
             if u1[s] != u0[s]:
                 stop_flag = False
         i += 1
-        print('===', i, '===')
-        for s in u0:
-            print(s, u0[s])
+        # print('===', i, '===')
+        # for s in u0:
+        #     print(s, u0[s])
         if stop_flag or i > 5:
             return u0
 

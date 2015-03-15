@@ -60,6 +60,7 @@ def value_iteration(mdp):
     u1 = dict([(s, 0) for s in mdp.states])
     r = mdp.rewards
     terminals = mdp.terminals
+    i = 0
     while True:
         u = u1.copy()
         delta = 0.0
@@ -69,5 +70,7 @@ def value_iteration(mdp):
                 continue
             u1[s] = max([sum([p * (r[s][s1] + u[s1]) for (p, s1) in s.act_dict[a]]) for a in s.act_dict])
             delta = max(delta, abs(u1[s] - u[s]))
+        i +=1
         if delta == 0:
+            print('dis:', i)
             return u
