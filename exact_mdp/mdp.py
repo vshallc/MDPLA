@@ -9,7 +9,7 @@ from la.piecewise import *
 ABS = 0
 REL = 1
 # variable
-x = sympy.Symbol('x', real=True)
+# x = sympy.Symbol('x', real=True)
 y = sympy.Symbol('y', real=True)
 
 
@@ -185,12 +185,9 @@ def state_value(s: State, r, v):
     min_v = v_b(new_bounds[-1])
     count = len(new_bounds) - 2  # from the penultimate turning point
     while count > 0:
-        print('count',new_bounds[count])
         tmp = v_b(new_bounds[count])
-        print('tmp',type(tmp))
-        print('min_v',min_v,type(min_v))
         if tmp < min_v:
-            roots = sympy.solve(new_polynomial_pieces[count] - new_polynomial_pieces[count - 1])
+            roots = sympy.solve(new_polynomial_pieces[count] - new_polynomial_pieces[count - 1], x)
             if roots:
                 root = roots[0]
                 if new_bounds[count - 1] < root < new_bounds[count + 1]:

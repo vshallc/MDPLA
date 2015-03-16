@@ -2,11 +2,11 @@ import math
 from numbers import Number
 import numpy as np
 import sympy
-import sympy.abc
+# import sympy.abc
 from sympy.polys import Poly
 import collections
 
-x = sympy.Symbol('x', real=True)
+x = sympy.symbols('x')
 
 
 def max_onepiece(x, f: Poly, g: Poly, l, u):
@@ -86,6 +86,21 @@ class PiecewisePolynomial(object):
         # x format: numpy.array
         v = np.array([x])
         condition_list = []
+        # c = len(self.__bounds) - 2
+        # while c >= 0:
+        #     if self.__bounds[c] <= v <= self.__bounds[c + 1]:
+        #         p = self.polynomial_pieces[c]
+        #         try:
+        #             p = sympy.simplify(p)
+        #         except:
+        #             pass
+        #         print(p)
+        #         if isinstance(p, collections.Callable):
+        #             return p(v)
+        #         else:
+        #             return p.subs(v)
+        #     c -= 1
+        # raise ValueError('argument must in domain')
         for i in range(1, len(self.__bounds)):
             condition_list.append((self.__bounds[i - 1] <= v) & (v < self.__bounds[i]))
         return np.piecewise(v, condition_list, self.__polynomial_pieces)

@@ -8,7 +8,6 @@ from sympy.polys import Poly
 
 
 def init_mdp():
-    x = sympy.Symbol('x', real=True)
     state = [State('Home'),
              State('x2'),
              State('Work')]
@@ -94,6 +93,11 @@ def main():
     for s in u:
         print(s, u[s])
     t = u[mdp.states[0]].bounds
+    print(u[mdp.states[0]])
+    print(t)
+    for tt in t:
+        print(tt)
+        print(u[mdp.states[0]](tt))
     v = [u[mdp.states[0]](tt) for tt in t]
     print(t, v)
     plt.plot(t, v)

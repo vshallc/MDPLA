@@ -1,7 +1,3 @@
-import sympy
-import sympy.abc
-from sympy.functions.special.delta_functions import *
-from sympy.polys import Poly
 from la.piecewise import *
 
 '''
