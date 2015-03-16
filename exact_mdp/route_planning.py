@@ -82,30 +82,32 @@ def init_mdp():
     # state[0].value_function = PiecewisePolynomial([Poly('0', x)], [7, 14])
     # state[1].value_function = PiecewisePolynomial([Poly('0', x)], [7, 14])
     # state[2].value_function = PiecewisePolynomial([Poly('0', x)], [7, 14])
-    mdp = MDP(state, miu, reward, state[0], {state[2]})
+    mdp = MDP(state, miu, reward, state[0], {state[2]},
+              PiecewisePolynomial([Poly('1', x), Poly('-x + 12', x), Poly('0', x)], [7, 11, 12, 14]),
+              [7, 14])
     return mdp
 
 
 def main():
     mdp = init_mdp()
     # test MDP
-    u = value_iteration(mdp)
+    u = mdp.value_iteration()
     for s in u:
         print(s, u[s])
-    t = u[mdp.states[0]].bounds
-    print(u[mdp.states[0]])
-    print(t)
-    for tt in t:
-        print(tt)
-        print(u[mdp.states[0]](tt))
+    bd = u[mdp.states[0]].bounds
+    print(bd)
+    t = []
+    c = 0
+    while c < len(bd) - 1:
+        stp = (bd[c + 1] - bd[c]) / 10.0
+        for itv in np.arange(bd[c], bd[c + 1], stp):
+            t.append(itv)
+        c += 1
+    t.append(bd[-1])
     v = [u[mdp.states[0]](tt) for tt in t]
     print(t, v)
     plt.plot(t, v)
     plt.show()
-    # c1 = mdp.V(None, x, a)
-    # print('c1')
-    # for i in range(0, c1.pieces):
-    #     print(str(c1.polynomial_pieces[i]) + ' ' + str(c1.bounds[i:i + 2]))
 
 
 if __name__ == "__main__":

@@ -119,7 +119,7 @@ class Action(object):
 
 class MDP(object):
     def __init__(self, states, miu, rewards,
-                 initial_state, terminal_state_set):
+                 initial_state, terminal_state_set, terminated_function, time_horizon):
         self.__states = states  # State set
         # self.__A = A      # Action set
         self.__miu = miu
@@ -129,6 +129,17 @@ class MDP(object):
         self.__rewards = rewards
         self.__initial_state = initial_state
         self.__terminal_state_set = terminal_state_set
+        self.__terminated_function = terminated_function
+        self.__time_horizon = time_horizon
+        self.reset_mdp()
+
+    def reset_mdp(self):
+        self.__u1 = dict()
+        for state in self.__states:
+            if state not in self.__terminal_state_set:
+                self.__u1[state] = PiecewisePolynomial([Poly('0', x)], self.__time_horizon)
+            else:
+                self.__u1[state] = self.__terminated_function
 
     @property
     def states(self):
@@ -146,34 +157,32 @@ class MDP(object):
     def terminal_state_set(self):
         return self.__terminal_state_set
 
-
-def value_iteration(mdp):
-    # V(x,t) = sup_{t'>=t}(\int^{t'}_t K(x,s) ds + V_bar(x,t'))
-    # u1 = dict([(s, PiecewisePolynomial([Poly('0', x)], [7, 14])) for s in mdp.states])
-    u1 = dict()
-    u1[mdp.states[0]] = PiecewisePolynomial([Poly('0', x)], [7, 14])
-    u1[mdp.states[1]] = PiecewisePolynomial([Poly('0', x)], [7, 14])
-    u1[mdp.states[2]] = PiecewisePolynomial([Poly('1', x), Poly('-x + 12', x), Poly('0', x)], [7, 11, 12, 14])
-    # for s in mdp.states:
-    #     print(u1[s])
-    r = mdp.rewards
-    terminals = mdp.terminal_state_set
-    i = 0
-    while True:
-        u0 = u1.copy()
-        stop_flag = True
-        for s in mdp.states:
-            if s in terminals:
-                continue
-            u1[s] = state_value(s, r, u0)
-            if u1[s] != u0[s]:
-                stop_flag = False
-        i += 1
-        # print('===', i, '===')
-        # for s in u0:
-        #     print(s, u0[s])
-        if stop_flag or i > 5:
-            return u0
+    def value_iteration(self):
+        # V(x,t) = sup_{t'>=t}(\int^{t'}_t K(x,s) ds + V_bar(x,t'))
+        # u1 = dict([(s, PiecewisePolynomial([Poly('0', x)], [7, 14])) for s in mdp.states])
+        # u1 = dict()
+        # u1[mdp.states[0]] = PiecewisePolynomial([Poly('0', x)], [7, 14])
+        # u1[mdp.states[1]] = PiecewisePolynomial([Poly('0', x)], [7, 14])
+        # u1[mdp.states[2]] = PiecewisePolynomial([Poly('1', x), Poly('-x + 12', x), Poly('0', x)], [7, 11, 12, 14])
+        u1 = self.__u1
+        r = self.rewards
+        terminals = self.terminal_state_set
+        i = 0
+        while True:
+            u0 = u1.copy()
+            stop_flag = True
+            for s in self.states:
+                if s in terminals:
+                    continue
+                u1[s] = state_value(s, r, u0)
+                if u1[s] != u0[s]:
+                    stop_flag = False
+            i += 1
+            # print('===', i, '===')
+            # for s in u0:
+            #     print(s, u0[s])
+            if stop_flag or i > 5:
+                return u0
 
 
 def state_value(s: State, r, v):
@@ -189,7 +198,7 @@ def state_value(s: State, r, v):
         if tmp < min_v:
             roots = sympy.solve(new_polynomial_pieces[count] - new_polynomial_pieces[count - 1], x)
             if roots:
-                root = roots[0]
+                root = float(roots[0])
                 if new_bounds[count - 1] < root < new_bounds[count + 1]:
                     new_bounds[count] = root
                     new_polynomial_pieces[count] = Poly(min_v, x)
