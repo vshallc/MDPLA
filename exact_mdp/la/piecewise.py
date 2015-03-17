@@ -34,6 +34,7 @@ def pwc_function_approximation(linear_piece, left_bound, right_bound, error_tole
     if linear_piece.degree() <= 0:
         return [linear_piece], [left_bound, right_bound]
     elif linear_piece.degree() >= 2:
+        print(linear_piece)
         raise ValueError('The function must be constant or linear.')
     a = linear_piece.LC()
     # print('a=', a, 'lb=', left_bound, 'rb=', right_bound)
