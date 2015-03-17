@@ -43,7 +43,7 @@ def pwc_function_approximation(linear_piece, left_bound, right_bound, error_tole
     pwc_result = []
     bounds_result = [left_bound]
     for i in range(0, piece_num):
-        pwc_result.append(linear_piece.subs(x, left_bound + (i - 0.5) * delta_x))
+        pwc_result.append(Poly(linear_piece.subs(x, left_bound + (i - 0.5) * delta_x), x))
         bounds_result.append(left_bound + (i + 1) * delta_x)
     return pwc_result, bounds_result
 
