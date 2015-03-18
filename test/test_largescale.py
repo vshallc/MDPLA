@@ -1,5 +1,6 @@
 
 
+def init_map(row, col, job_num):
 
 
 

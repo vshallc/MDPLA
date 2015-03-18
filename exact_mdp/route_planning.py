@@ -84,7 +84,7 @@ def init_mdp():
     # state[2].value_function = PiecewisePolynomial([Poly('0', x)], [7, 14])
     mdp = MDP(state, miu, reward, state[0],
               {state[2]: PiecewisePolynomial([Poly('1', x), Poly('-x + 12', x), Poly('0', x)], [7, 11, 12, 14])},
-              [7, 14], lazy=1, pwc=1, lazy_error_tolerance=0.03)
+              [7, 14], lazy=1, pwc=0, lazy_error_tolerance=0.03)
     return mdp
 
 
