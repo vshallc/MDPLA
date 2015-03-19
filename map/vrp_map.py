@@ -5,11 +5,14 @@ def link_two_nodes(node1, node2, travel_cost1, travel_cost2):
 
 
 class Node(object):
-    def __init__(self):
+    def __init__(self, seed_mu, seed_sigma):
         self.neighbours = dict()
+        self.seed_mu = seed_mu
+        self.seed_sigma = seed_sigma
 
     def add_neighbour(self, neighbour, travel_cost):
         self.neighbours[neighbour] = travel_cost
+
 
 class Map(object):
     def __init__(self, road_map, task_set):
