@@ -1,13 +1,13 @@
 import random
-from math_tools import *
+from utils.math_tools import *
 from exact_mdp.la.piecewise import *
 
 # 1 unit is about 6 min
 
 
 def link_two_nodes(node1, node2):
-    node1.add_neighbours(node2)
-    node2.add_neighbours(node1)
+    node1.add_neighbour(node2)
+    node2.add_neighbour(node1)
 
 
 def random_node(label, timespan=None,
@@ -45,12 +45,18 @@ def random_map(row, col):
     return rand_map
 
 
-def traffic_likelihood(from_node, to_node):
+def random_task(num):
+    pass
+
+
+def travel_outcomes(from_node, to_node):
+    result = dict()
     timespan = from_node.timespan
-    rush_span = (np.asarray(from_node.rush__span) + np.asarray(to_node.rush_span)) / 2
+    rush_span = (np.asarray(from_node.rush_span) + np.asarray(to_node.rush_span)) / 2
     k1 = 1 / (rush_span[1] - rush_span[0])
     k2 = 1 / (rush_span[3] - rush_span[2])
     # rush hour
+    # likelihood
     l1 = Poly('0', x)
     l2 = Poly(sympy.sympify(k1 * (x - rush_span[0]), x))
     l3 = Poly('1', x)
@@ -59,7 +65,14 @@ def traffic_likelihood(from_node, to_node):
     pw_rush = [l1, l2, l3, l4, l5]
     bd_rush = timespan[:]
     bd_rush[1:1] = rush_span
+    likelihood_rush = PiecewisePolynomial(pw_rush, bd_rush)
+    # distribution
+    mu_rush = (from_node.seed_mu_rush + to_node.seed_mu_rush) / 2
+    sigma_rush = math.sqrt(from_node.seed_sigma_rush * to_node.seed_sigma_rush)
+    distribution_rush = norm_pdf_linear_approximation(mu_rush, sigma_rush, from_node.timespan)
+    outcome_rush = Outcome('rush', likelihood_rush, distribution_rush)
     # off peak
+    # likelihood
     l1 = Poly('1', x)
     l2 = Poly(sympy.sympify(-k1 * (x - rush_span[1]), x))
     l3 = Poly('0', x)
@@ -68,22 +81,13 @@ def traffic_likelihood(from_node, to_node):
     pw_off = [l1, l2, l3, l4, l5]
     bd_off = timespan[:]
     bd_off[1:1] = rush_span
-    return PiecewisePolynomial(pw_rush, bd_rush), PiecewisePolynomial(pw_off, bd_off)
-
-
-def travel_outcomes(from_node, to_node):
-    outcomes = dict()
-    # traffic_rush = from_node.label + '-' + to_node.label + '_rush'
-    # traffic_off = from_node.label + '-' + to_node.label + '_off'
-    mu = (from_node.seed_mu_rush + to_node.seed_mu_rush) / 2
-    sigma = math.sqrt(from_node.seed_sigma_rush * to_node.seed_sigma_rush)
-    pw = norm_pdf_linear_approximation(mu, sigma, from_node.timespan)
-    outcomes['rush'] = pw
-    mu = (from_node.seed_mu_off + to_node.seed_mu_off) / 2
-    sigma = math.sqrt(from_node.seed_sigma_off * to_node.seed_sigma_off)
-    pw = norm_pdf_linear_approximation(mu, sigma, from_node.timespan)
-    outcomes['off'] = pw
-    return outcomes
+    likelihood_off = PiecewisePolynomial(pw_off, bd_off)
+    # distribution
+    mu_off = (from_node.seed_mu_off + to_node.seed_mu_off) / 2
+    sigma_off = math.sqrt(from_node.seed_sigma_off * to_node.seed_sigma_off)
+    distribution_off = norm_pdf_linear_approximation(mu_off, sigma_off, from_node.timespan)
+    outcome_off = Outcome('off', likelihood_off, distribution_off)
+    return [outcome_rush, outcome_off]
 
 
 class Node(object):
@@ -98,10 +102,25 @@ class Node(object):
         self.timespan = timespan
 
     def add_neighbour(self, neighbour):
-        self.neighbours[neighbour] = (traffic_likelihood(self, neighbour), travel_outcomes(self, neighbour))
+        self.neighbours[neighbour] = travel_outcomes(self, neighbour)
 
 
-class Map(object):
+class Outcome(object):
+    def __init__(self, label, likelihood, distribution):
+        self.label = label
+        self.likelihood = likelihood
+        self.distribution = distribution
+
+
+class Task(object):
+    def __init__(self, location, reward, penalty, time_cost):
+        self.location = location
+        self.reward = reward
+        self.penalty = penalty
+        self.time_cost = time_cost
+
+
+class VRP_Map(object):
     def __init__(self, road_map, task_set):
         self.road_map = road_map
         self.task_set = task_set
