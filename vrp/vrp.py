@@ -36,22 +36,28 @@ def random_map(row, col, timespan=None):
     for r in range(row):
         rand_map.append([])
         for c in range(col):
-            label = str(r*col+c)
+            label = str(r * col + c)
             rand_map[r].append(random_node(label, timespan))
-    for r in range(row-1):
-        for c in range(col-1):
-            link_two_nodes(rand_map[r][c], rand_map[r][c+1])
-            link_two_nodes(rand_map[r][c], rand_map[r+1][c])
+    for r in range(row - 1):
+        for c in range(col - 1):
+            link_two_nodes(rand_map[r][c], rand_map[r][c + 1])
+            link_two_nodes(rand_map[r][c], rand_map[r + 1][c])
     return rand_map
 
 
 def random_task(row, col, timespan=None):
     if timespan is None:
         timespan = [0, 40]
-    r = int(random.random()*row)
-    c = int(random.random()*col)
-    location = r*col+c
-
+    r = int(random.random() * row)
+    c = int(random.random() * col)
+    location = r * col + c
+    deadline = random.random() * (timespan[1] - timespan[0]) + timespan[0]
+    reward = random.randint(1, 3)
+    reward_function = PiecewisePolynomial([Poly(reward, x), Poly(float('-inf'), x)],
+                                          [timespan[0], deadline, timespan[1]])
+    penalty = PiecewisePolynomial([Poly(1, x)], timespan)
+    time_cost_distribution = PiecewisePolynomial([Poly('1', x)], [0.5, 1.5])
+    return Task(location, reward_function, penalty, time_cost_distribution)
 
 
 def travel_outcomes(from_node, to_node):
