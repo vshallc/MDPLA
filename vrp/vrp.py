@@ -1,14 +1,50 @@
+import itertools as it
+import mdp
 import random
 from utils.math_tools import *
 from exact_mdp.la.piecewise import *
 
 # 1 unit is about 6 min
 
+def vrp2mdp(vrp):
+    states = dict()
+    mius = dict()
+    rmap = vrp.road_map
+    tasks = vrp.tasks
+    rng = range(len(tasks))
+    row_max = len(rmap)
+    col_max = len(rmap[0])
+    for l in rng:
+        all_combs = it.combinations(rng, l)
+        for comb in all_combs:
+            for r in range(row_max):
+                for c in range(col_max):
+                    label = make_label(rmap[r][c], tasks, comb)
+                    states[label] = mdp.State(label)
+    for l in rng:
+        all_combs = it.combinations(rng, l)
+        for comb in all_combs:
+            for r in range(row_max):
+                for c in range(col_max):
+                    node_from = rmap[r][c]
 
-def link_two_nodes(node1, node2):
-    node1.add_neighbour(node2)
-    node2.add_neighbour(node1)
 
+
+
+def make_label(node, tasks, task_comb):
+    return str(node.label)+str([tasks[i] for i in task_comb])
+
+
+def add_miu(states, node_from, node_to, tasks, task_comb_from, task_comb_to):
+    label_from = make_label(node_from, tasks, task_comb_from)
+    label_to = make_label(node_to, tasks, task_comb_to)
+    state_from = states[label_from]
+    state_to = states[label_to]
+
+
+
+def random_vrp(row, col, task_num, timespan=None):
+    return VRP(random_map(row, col, timespan), random_tasks(task_num, row, col, timespan))
 
 def random_node(label, timespan,
                 avg_travel_cost_rush=5, avg_travel_cost_rush_error=2,
@@ -58,6 +94,15 @@ def random_task(row, col, timespan=None):
     penalty = PiecewisePolynomial([Poly(1, x)], timespan)
     time_cost_distribution = PiecewisePolynomial([Poly('1', x)], [0.5, 1.5])
     return Task(location, reward_function, penalty, time_cost_distribution)
+
+
+def random_tasks(task_num, row, col, timespan=None):
+    return [random_task(row, col, timespan) for i in range(len(task_num))]
+
+
+def link_two_nodes(node1, node2):
+    node1.add_neighbour(node2)
+    node2.add_neighbour(node1)
 
 
 def travel_outcomes(from_node, to_node):
@@ -131,7 +176,7 @@ class Task(object):
         self.time_cost = time_cost
 
 
-class VRPMap(object):
-    def __init__(self, road_map, task_set):
+class VRP(object):
+    def __init__(self, road_map, tasks):
         self.road_map = road_map
-        self.task_set = task_set
+        self.tasks = tasks
