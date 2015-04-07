@@ -267,6 +267,7 @@ class PiecewisePolynomial(object):
 
 
 def max_piece(x, f, g, lower, upper):
+    print('f,g: ', f, g)
     roots = (f - g).real_roots()
     try:
         roots = [float(r) for r in roots if lower < r < upper]

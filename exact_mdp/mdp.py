@@ -4,7 +4,7 @@ Define general MDP components
 
 """
 import sympy
-from la.piecewise import *
+from exact_mdp.la.piecewise import *
 # Constants
 ABS = 0
 REL = 1
@@ -206,6 +206,7 @@ class MDP(object):
             for s in self.states:
                 if s in terminals:
                     continue
+                print('state: ', s)
                 u1[s] = self.state_value(s, u0)
                 if u1[s] != u0[s]:
                     stop_flag = False
