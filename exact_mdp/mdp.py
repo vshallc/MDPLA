@@ -234,7 +234,9 @@ class MDP(object):
         while count > 0:
             tmp = V_bar(new_bounds[count])
             if tmp < min_v:
-                roots = sympy.solve(new_polynomial_pieces[count] - new_polynomial_pieces[count - 1], x)
+                # roots = sympy.solve(new_polynomial_pieces[count] - new_polynomial_pieces[count - 1], x)
+                diff_p = new_polynomial_pieces[count] - new_polynomial_pieces[count - 1]
+                roots = diff_p.real_roots()
                 if roots:
                     root = float(roots[0])
                     if new_bounds[count - 1] < root < new_bounds[count + 1]:

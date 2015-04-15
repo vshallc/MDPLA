@@ -89,7 +89,7 @@ def make_label(node, tasks, task_comb):
 def random_vrp(row, col, task_num, timespan=None, terminate_function=None):
     if timespan is None:
         timespan = [0, 40]
-        terminate_function = PiecewisePolynomial([Poly('0', x), Poly(-10 * x + 200, x), Poly(float('-inf'), x)],
+        terminate_function = PiecewisePolynomial([Poly('0', x), Poly(-10 * x + 200, x), Poly(float('-10000'), x)],
                                                  [0, 20, 30, 40])
     company_row = random.randint(0, row - 1)
     company_col = random.randint(0, col - 1)
