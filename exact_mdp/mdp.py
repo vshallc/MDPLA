@@ -211,6 +211,7 @@ class MDP(object):
                 if u1[s] != u0[s]:
                     stop_flag = False
             i += 1
+            print('iter',i)
             if stop_flag or i > 5:
                 return u0
 
@@ -232,13 +233,16 @@ class MDP(object):
         min_v = V_bar(new_bounds[-1])
         count = len(new_bounds) - 2  # from the penultimate turning point
         while count > 0:
+            print('count: ', count)
             tmp = V_bar(new_bounds[count])
             if tmp < min_v:
                 # roots = sympy.solve(new_polynomial_pieces[count] - new_polynomial_pieces[count - 1], x)
                 diff_p = new_polynomial_pieces[count] - new_polynomial_pieces[count - 1]
                 roots = diff_p.real_roots()
                 if roots:
+                    print('bef r')
                     root = float(roots[0])
+                    print('aft r')
                     if new_bounds[count - 1] < root < new_bounds[count + 1]:
                         new_bounds[count] = root
                         new_polynomial_pieces[count] = Poly(min_v, x)
