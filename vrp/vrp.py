@@ -78,7 +78,7 @@ def vrp2mdp(vrp):
     state_list=[states[key] for key in states]
     return emdp.MDP(state_list, mius, rewards,
                     initial_state, terminal_states, vrp.timespan,
-                    lazy=1, pwc=0, lazy_error_tolerance=0.1)
+                    lazy=0, pwc=0, lazy_error_tolerance=0.1)
 
 
 def make_label(node, tasks, task_comb):
@@ -148,7 +148,7 @@ def random_task(label, row, col, timespan):
     # [timespan[0], deadline, timespan[1]])
     # penalty = PiecewisePolynomial([Poly(1, x)], timespan)
     # time_cost_distribution = PiecewisePolynomial([Poly('1', x)], [0.5, 1.5])
-    return Task(label, location, reward, 1, [0.5, 1.5], timespan, [window_left, window_right])
+    return Task(label, location, reward, -1.0, [0.5, 1.5], timespan, [window_left, window_right])
 
 
 def random_tasks(task_num, row, col, timespan=None):

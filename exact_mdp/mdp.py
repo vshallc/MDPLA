@@ -19,13 +19,14 @@ def U_ABS(t, P, V):
     h = P * V
     # print('h: ', h)
     i = [sympy.integrate(p.as_expr(), t) for p in h.polynomial_pieces]
-    return PiecewisePolynomial([Poly(sum([i[j].subs(t, h.bounds[j + 1]) - i[j].subs(t, h.bounds[j])
+    h = PiecewisePolynomial([Poly(sum([i[j].subs(t, h.bounds[j + 1]) - i[j].subs(t, h.bounds[j])
                                           for j in range(len(h.polynomial_pieces))]), t)],
                                [min(P.bounds[0], V.bounds[0]), max(P.bounds[-1], V.bounds[-1])])
+    h.simplify()
+    return h
 
 
 def U_REL(t, P, V):
-    print('UREL:P,V ',P.pieces,V.pieces)
     lower = V.bounds[0]
     upper = V.bounds[-1]
     h = PiecewisePolynomial([Poly('0', t)], [lower, upper])
@@ -34,21 +35,20 @@ def U_REL(t, P, V):
             f = P.polynomial_pieces[i]
             g = V.polynomial_pieces[j]
             if f.is_zero or g.is_zero:
-                print('zero')
+                # print('zero')
                 continue
-            print('U_REL', i, j, f, g)
+            # print('U_REL', i, j, f, g)
             f_piece = (f, P.bounds[i], P.bounds[i + 1])
             g_piece = (g, V.bounds[j], V.bounds[j + 1])
             piecewise_result = convolute_onepiece(t, f_piece, g_piece, lower, upper)
             h += piecewise_result
-    print('end U_REL')
+    h.simplify()
     return h
 
 
 def convolute_onepiece(x, F, G, lower, upper):
     # This function is a modified version of the convolution function from
     # http://www.mare.ee/indrek/misc/convolution.pdf
-    print('conv')
     f, a_f, b_f = F
     g, a_g, b_g = G
     f = f.as_expr()
@@ -206,6 +206,7 @@ class MDP(object):
         terminals = self.terminal_state_dict
         i = 0
         while True:
+            print('========= iter =========: ', i)
             u0 = u1.copy()
             stop_flag = True
             for s in self.states:
@@ -216,8 +217,10 @@ class MDP(object):
                 if u1[s] != u0[s]:
                     stop_flag = False
             i += 1
-            print('iter',i)
+            # print('iter',i)
             if stop_flag or i > 5:
+                if i > 5:
+                    print('i>5')
                 return u0
 
     def state_value(self, s: State, v):
@@ -228,31 +231,33 @@ class MDP(object):
             V_bar = self.q(s, act_set[0], self.rewards, v)
         else:
             best_pw = self.q(s, act_set[0], self.rewards, v)
-            print('loop a begin')
+            # print('loop a begin')
             for a in act_set[1:]:
                 best_pw = max_piecewise(x, best_pw, self.q(s, a, self.rewards, v))
-            print('loop a end')
+            # print('loop a end')
+            best_pw.simplify()
             V_bar = best_pw
         # for dawdling
         # v_b = v_bar(s, self.rewards, v)
-        print('debug')
+        # print('debug')
         new_bounds = V_bar.bounds.copy()
         new_polynomial_pieces = V_bar.polynomial_pieces.copy()
         min_v = V_bar(new_bounds[-1])
         count = len(new_bounds) - 2  # from the penultimate turning point
         while count > 0:
-            print('count: ', count)
+            # print('count: ', count)
             tmp = V_bar(new_bounds[count])
             if tmp < min_v:
                 # roots = sympy.solve(new_polynomial_pieces[count] - new_polynomial_pieces[count - 1], x)
                 diff_p = new_polynomial_pieces[count] - new_polynomial_pieces[count - 1]
                 print('diffp:',diff_p)
-                roots = diff_p.real_roots()
+                # roots = diff_p.real_roots()
+                roots = sympy.solve(diff_p)
                 print('roots:', roots)
                 if roots:
-                    print('bef r')
+                    # print('bef r')
                     root = float(roots[0])
-                    print('aft r')
+                    # print('aft r')
                     if new_bounds[count - 1] < root < new_bounds[count + 1]:
                         new_bounds[count] = root
                         new_polynomial_pieces[count] = Poly(min_v, x)
@@ -275,7 +280,7 @@ class MDP(object):
         # print('state: ', s, '-', m[0], 'abs/rel: ', m[1], 'prob: ', m[2], 'outcomes: ', outcomes[m])
         Q = PiecewisePolynomial([Poly('0', x)], self.__time_horizon)
         for miu in outcomes:
-            print('state: ', s, '-', self.mius[miu][0], 'abs/rel: ', self.mius[miu][1], 'prob: ', self.mius[miu][2], 'outcomes: ', outcomes[miu])
+            # print('state: ', s, '-', self.mius[miu][0], 'abs/rel: ', self.mius[miu][1], 'prob: ', self.mius[miu][2], 'outcomes: ', outcomes[miu])
             if self.mius[miu][1] == ABS:
                 U = r[miu] + U_ABS(x, self.mius[miu][2], v[self.mius[miu][0]])
             elif self.mius[miu][1] == REL:

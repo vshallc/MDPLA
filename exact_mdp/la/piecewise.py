@@ -6,7 +6,7 @@ import sympy
 from sympy.polys import Poly
 import collections
 
-x = sympy.symbols('x')
+x = sympy.symbols('x',real=True)
 
 
 def max_onepiece(x, f: Poly, g: Poly, l, u):
