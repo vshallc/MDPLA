@@ -25,6 +25,7 @@ def U_ABS(t, P, V):
 
 
 def U_REL(t, P, V):
+    print('UREL:P,V ',P.pieces,V.pieces)
     lower = V.bounds[0]
     upper = V.bounds[-1]
     h = PiecewisePolynomial([Poly('0', t)], [lower, upper])
@@ -33,17 +34,21 @@ def U_REL(t, P, V):
             f = P.polynomial_pieces[i]
             g = V.polynomial_pieces[j]
             if f.is_zero or g.is_zero:
+                print('zero')
                 continue
+            print('U_REL', i, j, f, g)
             f_piece = (f, P.bounds[i], P.bounds[i + 1])
             g_piece = (g, V.bounds[j], V.bounds[j + 1])
             piecewise_result = convolute_onepiece(t, f_piece, g_piece, lower, upper)
             h += piecewise_result
+    print('end U_REL')
     return h
 
 
 def convolute_onepiece(x, F, G, lower, upper):
     # This function is a modified version of the convolution function from
     # http://www.mare.ee/indrek/misc/convolution.pdf
+    print('conv')
     f, a_f, b_f = F
     g, a_g, b_g = G
     f = f.as_expr()
@@ -223,11 +228,14 @@ class MDP(object):
             V_bar = self.q(s, act_set[0], self.rewards, v)
         else:
             best_pw = self.q(s, act_set[0], self.rewards, v)
+            print('loop a begin')
             for a in act_set[1:]:
                 best_pw = max_piecewise(x, best_pw, self.q(s, a, self.rewards, v))
+            print('loop a end')
             V_bar = best_pw
         # for dawdling
         # v_b = v_bar(s, self.rewards, v)
+        print('debug')
         new_bounds = V_bar.bounds.copy()
         new_polynomial_pieces = V_bar.polynomial_pieces.copy()
         min_v = V_bar(new_bounds[-1])
@@ -238,7 +246,9 @@ class MDP(object):
             if tmp < min_v:
                 # roots = sympy.solve(new_polynomial_pieces[count] - new_polynomial_pieces[count - 1], x)
                 diff_p = new_polynomial_pieces[count] - new_polynomial_pieces[count - 1]
+                print('diffp:',diff_p)
                 roots = diff_p.real_roots()
+                print('roots:', roots)
                 if roots:
                     print('bef r')
                     root = float(roots[0])
@@ -265,11 +275,11 @@ class MDP(object):
         # print('state: ', s, '-', m[0], 'abs/rel: ', m[1], 'prob: ', m[2], 'outcomes: ', outcomes[m])
         Q = PiecewisePolynomial([Poly('0', x)], self.__time_horizon)
         for miu in outcomes:
-            # print('state: ', s, '-', self.mius[miu][0], 'abs/rel: ', self.mius[miu][1], 'prob: ', self.mius[miu][2], 'outcomes: ', outcomes[miu])
+            print('state: ', s, '-', self.mius[miu][0], 'abs/rel: ', self.mius[miu][1], 'prob: ', self.mius[miu][2], 'outcomes: ', outcomes[miu])
             if self.mius[miu][1] == ABS:
                 U = r[miu] + U_ABS(x, self.mius[miu][2], v[self.mius[miu][0]])
             elif self.mius[miu][1] == REL:
-                # print('r',r[miu])
+                print('r',r[miu])
                 U = r[miu] + U_REL(x, self.mius[miu][2], v[self.mius[miu][0]])
             else:
                 raise ValueError('The type of the miu time distribution function is wrong')

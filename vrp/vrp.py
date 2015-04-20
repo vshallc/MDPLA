@@ -78,7 +78,7 @@ def vrp2mdp(vrp):
     state_list=[states[key] for key in states]
     return emdp.MDP(state_list, mius, rewards,
                     initial_state, terminal_states, vrp.timespan,
-                    lazy=1, pwc=1, lazy_error_tolerance=0.1)
+                    lazy=1, pwc=0, lazy_error_tolerance=0.1)
 
 
 def make_label(node, tasks, task_comb):
