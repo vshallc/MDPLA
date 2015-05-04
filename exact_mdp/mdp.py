@@ -3,42 +3,45 @@
 Define general MDP components
 
 """
-import sympy
+# import sympy
 from exact_mdp.la.piecewise import *
 # Constants
 ABS = 0
 REL = 1
 # variable
 # x = sympy.Symbol('x', real=True)
-y = sympy.Symbol('y', real=True)
+# y = sympy.Symbol('y', real=True)
 
 
-def U_ABS(t, P, V):
+def U_ABS(U, V):
     # print('P: ', P)
     # print('V: ', V)
-    h = P * V
+    h = U * V
     # print('h: ', h)
-    i = [sympy.integrate(p.as_expr(), t) for p in h.polynomial_pieces]
-    h = PiecewisePolynomial([Poly(sum([i[j].subs(t, h.bounds[j + 1]) - i[j].subs(t, h.bounds[j])
-                                          for j in range(len(h.polynomial_pieces))]), t)],
-                               [min(P.bounds[0], V.bounds[0]), max(P.bounds[-1], V.bounds[-1])])
+    i = [p.integ() for p in h.polynomial_pieces]
+    h = PiecewisePolynomial([
+        P([sum([
+            i[j](h.bounds[j + 1]) - i[j](h.bounds[j]) for j in range(len(h.polynomial_pieces))
+        ])])
+    ],
+        [min(U.bounds[0], V.bounds[0]), max(U.bounds[-1], V.bounds[-1])])
     h.simplify()
     return h
 
 
-def U_REL(t, P, V):
+def U_REL(U, V):
     lower = V.bounds[0]
     upper = V.bounds[-1]
-    h = PiecewisePolynomial([Poly('0', t)], [lower, upper])
-    for i in range(0, P.pieces):
+    h = PiecewisePolynomial([P([0])], [lower, upper])
+    for i in range(0, U.pieces):
         for j in range(0, V.pieces):
-            f = P.polynomial_pieces[i]
+            f = U.polynomial_pieces[i]
             g = V.polynomial_pieces[j]
-            if f.is_zero or g.is_zero:
+            if (f.degree() == 0 and f.coef[0] == 0) or (g.degree() == 0 and g.coef[0] == 0):
                 # print('zero')
                 continue
             # print('U_REL', i, j, f, g)
-            f_piece = (f, P.bounds[i], P.bounds[i + 1])
+            f_piece = (f, U.bounds[i], U.bounds[i + 1])
             g_piece = (g, V.bounds[j], V.bounds[j + 1])
             piecewise_result = convolute_onepiece(t, f_piece, g_piece, lower, upper)
             h += piecewise_result
@@ -54,7 +57,7 @@ def convolute_onepiece(x, F, G, lower, upper):
     f = f.as_expr()
     g = g.as_expr()
     # special change for lazy approximation
-    f = f.subs(x, -x)
+    f = f(P([0, -1]))
     a_f, b_f = -b_f, -a_f
     # print('f: ', f, ' a_f: ', a_f, ' b_f: ', b_f)
     # print('g: ', g, ' a_g: ', a_g, ' b_g: ', b_g)
@@ -64,11 +67,11 @@ def convolute_onepiece(x, F, G, lower, upper):
     bl = a_f + a_g
     bu = b_f + b_g
     if bl >= upper or bu <= lower:
-        return PiecewisePolynomial([Poly('0', x)], [lower, upper])
+        return PiecewisePolynomial([P([0])], [lower, upper])
     bl = lower if bl < lower else bl
     bu = upper if bu > upper else bu
     if a_f == b_f:
-        return PiecewisePolynomial([Poly(f.subs(x, a_f) * g.subs(x, x - a_f), x)], [bl, bu])
+        return PiecewisePolynomial([P([f(a_f) * g(P([-a_f, 1]))])], [bl, bu])
     else:
         y = sympy.Dummy('y')
         i = sympy.integrate(f.subs(x, y) * g.subs(x, x - y), y)
@@ -148,11 +151,11 @@ class MDP(object):
             if self.__pwc:
                 for m in self.mius:
                     self.mius[m] = (self.mius[m][0],
-                                   self.mius[m][1],
-                                   self.mius[m][2].to_pwc_function_approximation(self.__lazy_err_tol))
+                                    self.mius[m][1],
+                                    self.mius[m][2].to_pwc_function_approximation(self.__lazy_err_tol))
                 # print('miu!!!')
                 # for s in self.states:
-                #     for a in s.action_set:
+                # for a in s.action_set:
                 #         outcomes = s.get_outcomes(a)
                 #         for miu in outcomes:
                 #             print(miu)
@@ -172,8 +175,8 @@ class MDP(object):
             else:
                 for m in self.mius:
                     self.mius[m] = (self.mius[m][0],
-                                   self.mius[m][1],
-                                   self.mius[m][2].to_constant_function_approximation())
+                                    self.mius[m][1],
+                                    self.mius[m][2].to_constant_function_approximation())
                 for m in self.rewards:
                     self.rewards[m] = self.rewards[m].to_constant_function_approximation()
                 for state in self.states:
@@ -247,7 +250,7 @@ class MDP(object):
             if tmp < min_v:
                 # roots = sympy.solve(new_polynomial_pieces[count] - new_polynomial_pieces[count - 1], x)
                 diff_p = new_polynomial_pieces[count] - new_polynomial_pieces[count - 1]
-                print('diffp:',diff_p)
+                print('diffp:', diff_p)
                 # roots = diff_p.real_roots()
                 roots = sympy.solve(diff_p)
                 print('roots:', roots)
@@ -281,7 +284,7 @@ class MDP(object):
             if self.mius[miu][1] == ABS:
                 U = r[miu] + U_ABS(x, self.mius[miu][2], v[self.mius[miu][0]])
             elif self.mius[miu][1] == REL:
-                print('r',r[miu])
+                print('r', r[miu])
                 U = r[miu] + U_REL(x, self.mius[miu][2], v[self.mius[miu][0]])
             else:
                 raise ValueError('The type of the miu time distribution function is wrong')
@@ -295,7 +298,7 @@ class MDP(object):
         return Q
 
         # def v_bar(s: State, r, v):
-        #     act_set = list(s.action_set)
+        # act_set = list(s.action_set)
         #     if len(act_set) == 1:
         #         # res = q(s, act_set[0], r, v)
         #         # print('act: ', act_set[0], ' ', res)
