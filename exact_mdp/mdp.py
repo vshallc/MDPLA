@@ -202,7 +202,6 @@ class MDP(object):
     def value_iteration(self):
         # V(x,t) = sup_{t'>=t}(\int^{t'}_t K(x,s) ds + V_bar(x,t'))
         u1 = self.__u1
-        # r = self.rewards
         terminals = self.terminal_state_dict
         i = 0
         while True:
@@ -231,10 +230,8 @@ class MDP(object):
             V_bar = self.q(s, act_set[0], self.rewards, v)
         else:
             best_pw = self.q(s, act_set[0], self.rewards, v)
-            # print('loop a begin')
             for a in act_set[1:]:
                 best_pw = max_piecewise(x, best_pw, self.q(s, a, self.rewards, v))
-            # print('loop a end')
             best_pw.simplify()
             V_bar = best_pw
         # for dawdling
@@ -289,10 +286,6 @@ class MDP(object):
             else:
                 raise ValueError('The type of the miu time distribution function is wrong')
             Q += outcomes[miu] * U
-            # print('m', self.mius[miu][2])
-            # print('v', v[self.mius[miu][0]])
-            # print('U', U)
-            # print('Q', Q)
         if self.__lazy:
             if self.__pwc:
                 Q = Q.to_pwc_function_approximation(self.__lazy_err_tol)

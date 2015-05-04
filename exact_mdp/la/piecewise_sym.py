@@ -1,8 +1,12 @@
 import math
 from numbers import Number
 import numpy as np
-from numpy import poly1d
+import sympy
+# import sympy.abc
+from sympy.polys import Poly
+import collections
 
+x = sympy.symbols('x',real=True)
 
 
 def max_onepiece(x, f: Poly, g: Poly, l, u):
