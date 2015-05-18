@@ -64,6 +64,7 @@ class PiecewisePolynomial(object):
         for i in range(1, len(self.bounds)):
             cc = (self.bounds[i - 1] <= v < self.bounds[i])
             condition_list.append(cc)
+        print(v, condition_list, self.polynomial_pieces)
         return np.piecewise(v, condition_list, self.polynomial_pieces)
 
     def __add__(self, other):

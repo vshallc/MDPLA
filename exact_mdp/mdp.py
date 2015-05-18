@@ -220,6 +220,7 @@ class MDP(object):
             for state in self.states:
                 if state not in self.__terminal_state_dict:
                     self.__u1[state] = PiecewisePolynomial([P([0])], self.__time_horizon)
+                    # print('debug:init', state, self.__u1[state])
                 else:
                     self.__u1[state] = self.__terminal_state_dict[state]
 
@@ -257,6 +258,8 @@ class MDP(object):
     def state_value(self, s: State, v):
         # This is only for piecewise linear function
         # compute v_bar
+        for pie in v[s].polynomial_pieces:
+            print('debug:v', pie)
         act_set = list(s.action_set)
         if len(act_set) == 1:
             V_bar = self.q(s, act_set[0], self.rewards, v)
@@ -268,13 +271,13 @@ class MDP(object):
             V_bar = best_pw
         # for dawdling
         # v_b = v_bar(s, self.rewards, v)
-        # print('debug')
+        print('debug', s, V_bar)
         new_bounds = V_bar.bounds.copy()
         new_polynomial_pieces = V_bar.polynomial_pieces.copy()
         min_v = V_bar(new_bounds[-1])
         count = len(new_bounds) - 2  # from the penultimate turning point
         while count > 0:
-            # print('count: ', count)
+            print('count: ', count)
             tmp = V_bar(new_bounds[count])
             if tmp < min_v:
                 # roots = sympy.solve(new_polynomial_pieces[count] - new_polynomial_pieces[count - 1], x)
@@ -310,7 +313,7 @@ class MDP(object):
         # print('state: ', s, '-', m[0], 'abs/rel: ', m[1], 'prob: ', m[2], 'outcomes: ', outcomes[m])
         Q = PiecewisePolynomial([P([0])], self.__time_horizon)
         for miu in outcomes:
-            # print('state: ', s, '-', self.mius[miu][0], 'abs/rel: ', self.mius[miu][1], 'prob: ', self.mius[miu][2], 'outcomes: ', outcomes[miu])
+            print('state: ', s, '-', self.mius[miu][0], 'abs/rel: ', self.mius[miu][1], 'prob: ', self.mius[miu][2], 'outcomes: ', outcomes[miu])
             if self.mius[miu][1] == ABS:
                 U = r[miu] + U_ABS(self.mius[miu][2], v[self.mius[miu][0]])
             elif self.mius[miu][1] == REL:

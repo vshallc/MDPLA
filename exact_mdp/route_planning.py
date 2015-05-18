@@ -1,10 +1,5 @@
 import matplotlib.pyplot as plt
-from la.la import *
-from la.piecewise import *
 from exact_mdp.mdp import *
-import sympy
-import sympy.abc
-from sympy.polys import Poly
 
 
 def init_mdp():
@@ -21,7 +16,7 @@ def init_mdp():
                                                         P([0])],
                                                        [7, 9, 9.75, 10.5, 14])),  # miu2
            'miu3': (state[1], REL, PiecewisePolynomial([P([0]),
-                                                        P([-1,1]),
+                                                        P([-1, 1]),
                                                         P([3, -1]),
                                                         P([0])],
                                                        [0, 1, 2, 3, 7])),  # miu3
@@ -84,7 +79,7 @@ def init_mdp():
     # state[2].value_function = PiecewisePolynomial([Poly('0', x)], [7, 14])
     mdp = MDP(state, miu, reward, state[0],
               {state[2]: PiecewisePolynomial([P([1]), P([12, -1]), P([0])], [7, 11, 12, 14])},
-              [7, 14], lazy=1, pwc=0, lazy_error_tolerance=0.03)
+              [7, 14], lazy=0, pwc=0, lazy_error_tolerance=0.03)
     return mdp
 
 
