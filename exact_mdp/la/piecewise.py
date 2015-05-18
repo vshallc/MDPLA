@@ -1,8 +1,7 @@
 import math
 from numbers import Number
 import numpy as np
-from numpy.polynomial.polynomial import Polynomial as P
-from numpy.polynomial.polynomial import polyzero as P0
+from numpy.polynomial import Polynomial as P
 
 def max_onepiece(x, f, g, l, u):
     roots = sorted(set((f - g).real_roots()))
@@ -249,9 +248,15 @@ class PiecewisePolynomial(object):
         return PiecewisePolynomial(new_polynomial_pieces, new_bounds)
 
 
-def max_piece(x, f, g, lower, upper):
+def max_piece(f, g, lower, upper):
     print('f,g: ', f, g)
-    roots = (f - g).real_roots()
+    # roots = (f - g).real_roots()
+    diff = f - g
+    if diff.degree() > 0:
+        roots = np.roots(diff)
+        roots = roots.real[abs(roots.imag) < 1e-5]
+    else:
+        roots = []
     try:
         roots = [float(r) for r in roots if lower < r < upper]
     except TypeError:
@@ -277,7 +282,7 @@ def max_piece(x, f, g, lower, upper):
             return [g], [upper]
 
 
-def max_piecewise(x, pw_f: PiecewisePolynomial, pw_g: PiecewisePolynomial):
+def max_piecewise(pw_f: PiecewisePolynomial, pw_g: PiecewisePolynomial):
     # for linear pieces only
     new_bounds = []
     new_polynomial_pieces = []
@@ -307,7 +312,7 @@ def max_piecewise(x, pw_f: PiecewisePolynomial, pw_g: PiecewisePolynomial):
     while b1_flag or b2_flag:
         # new_polynomial_pieces.append(p1 + p2)
         if b1_next < b2_next:
-            p, b = max_piece(x, p1, p2, new_bounds[-1], b1_next)
+            p, b = max_piece(p1, p2, new_bounds[-1], b1_next)
             new_polynomial_pieces.extend(p)
             new_bounds.extend(b)
             p1 = next(pieces1, P([0]))
@@ -318,7 +323,7 @@ def max_piecewise(x, pw_f: PiecewisePolynomial, pw_g: PiecewisePolynomial):
                 b1_next = float('inf')
                 b1_flag = False
         elif b1_next > b2_next:
-            p, b = max_piece(x, p1, p2, new_bounds[-1], b2_next)
+            p, b = max_piece(p1, p2, new_bounds[-1], b2_next)
             new_polynomial_pieces.extend(p)
             new_bounds.extend(b)
             p2 = next(pieces2, P([0]))
@@ -329,7 +334,7 @@ def max_piecewise(x, pw_f: PiecewisePolynomial, pw_g: PiecewisePolynomial):
                 b2_next = float('inf')
                 b2_flag = False
         else:
-            p, b = max_piece(x, p1, p2, new_bounds[-1], b1_next)
+            p, b = max_piece(p1, p2, new_bounds[-1], b1_next)
             new_polynomial_pieces.extend(p)
             new_bounds.extend(b)
             p1 = next(pieces1, P([0]))

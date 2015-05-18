@@ -3,7 +3,7 @@
 Define general MDP components
 
 """
-# import sympy
+import numpy.polynomial.polynomial
 from exact_mdp.la.piecewise import *
 # Constants
 ABS = 0
@@ -43,19 +43,17 @@ def U_REL(U, V):
             # print('U_REL', i, j, f, g)
             f_piece = (f, U.bounds[i], U.bounds[i + 1])
             g_piece = (g, V.bounds[j], V.bounds[j + 1])
-            piecewise_result = convolute_onepiece(t, f_piece, g_piece, lower, upper)
+            piecewise_result = convolute_onepiece(f_piece, g_piece, lower, upper)
             h += piecewise_result
     h.simplify()
     return h
 
 
-def convolute_onepiece(x, F, G, lower, upper):
+def convolute_onepiece(F, G, lower, upper):
     # This function is a modified version of the convolution function from
     # http://www.mare.ee/indrek/misc/convolution.pdf
     f, a_f, b_f = F
     g, a_g, b_g = G
-    f = f.as_expr()
-    g = g.as_expr()
     # special change for lazy approximation
     f = f(P([0, -1]))
     a_f, b_f = -b_f, -a_f
@@ -73,23 +71,54 @@ def convolute_onepiece(x, F, G, lower, upper):
     if a_f == b_f:
         return PiecewisePolynomial([P([f(a_f) * g(P([-a_f, 1]))])], [bl, bu])
     else:
-        y = sympy.Dummy('y')
-        i = sympy.integrate(f.subs(x, y) * g.subs(x, x - y), y)
+        cfy = f.coef  # f.subs(x, y)
+        csub = P([1, -1])  # x-y where only y is seen as variable
+        gda1 = g.degree() + 1
+        cgxy = np.zeros((gda1, gda1))
+        for i in range(gda1):
+            cgxy[i][:i + 1] = (csub ** i).coef
+        cgxy = (np.asarray([g.coef]).transpose() * cgxy).transpose()
+        for i in range(1, gda1):  # g.subs(x, x - y)
+            cgxy[i] = np.roll(cgxy[i], -i)
+        fda1 = f.degree() + 1
+        r, c = cgxy.shape
+        fmg = np.zeros((r + fda1 - 1, c))
+        for i in range(fda1):  # f.subs(x,y) * g.subs(x, x - y)
+            fmg[i:i + r] = fmg[i:i + r] + cfy[i] * cgxy
+        intfg = np.polynomial.polynomial.polyint(cgxy)  # integration
         b = [bl]
         p = []
         b1 = b_f + a_g
         b2 = a_f + b_g
         b1 = lower if b1 < lower else upper if b1 > upper else b1
         b2 = lower if b2 < lower else upper if b2 > upper else b2
+        r, c = np.shape(intfg)
         if b[-1] < b1:
             b.append(b1)
-            p.append(Poly(i.subs(y, x - a_g) - i.subs(y, a_f), x))
+            csub = P([-a_g, 1])
+            intfgsub1 = P(intfg[0])
+            intfgsub2 = P(intfg[0])
+            for i in range(1, r):
+                intfgsub1 += intfg[i] * csub ** i
+                intfgsub2 + intfg[i] * a_f ** i
+            p.append(intfgsub1 - intfgsub2)  # p.append(Poly(i.subs(y, x - a_g) - i.subs(y, a_f), x))
         if b[-1] < b2:
             b.append(b2)
-            p.append(Poly(i.subs(y, b_f) - i.subs(y, a_f), x))
+            intfgsub1 = P(intfg[0])
+            intfgsub2 = P(intfg[0])
+            for i in range(1, r):
+                intfgsub1 += intfg[i] * b_f ** i
+                intfgsub2 + intfg[i] * a_f ** i
+            p.append(intfgsub1 - intfgsub2)  # p.append(Poly(i.subs(y, b_f) - i.subs(y, a_f), x))
         if b[-1] < bu:
             b.append(bu)
-            p.append(Poly(i.subs(y, b_f) - i.subs(y, x - b_g), x))
+            csub = P([-b_g, 1])
+            intfgsub1 = P(intfg[0])
+            intfgsub2 = P(intfg[0])
+            for i in range(1, r):
+                intfgsub1 += intfg[i] * b_f ** i
+                intfgsub2 + intfg[i] * csub ** i
+            p.append(intfgsub1 - intfgsub2)  # p.append(Poly(i.subs(y, b_f) - i.subs(y, x - b_g), x))
         return PiecewisePolynomial(p, b)
 
 
@@ -156,9 +185,9 @@ class MDP(object):
                 # print('miu!!!')
                 # for s in self.states:
                 # for a in s.action_set:
-                #         outcomes = s.get_outcomes(a)
-                #         for miu in outcomes:
-                #             print(miu)
+                # outcomes = s.get_outcomes(a)
+                # for miu in outcomes:
+                # print(miu)
                 # print('miu-')
                 for m in self.rewards:
                     self.rewards[m] = self.rewards[m].to_pwc_function_approximation(self.__lazy_err_tol)
@@ -168,7 +197,7 @@ class MDP(object):
                             state.actions[action][miu] = state.actions[action][miu].to_pwc_function_approximation(
                                 self.__lazy_err_tol)
                     if state not in self.__terminal_state_dict:
-                        self.__u1[state] = PiecewisePolynomial([Poly('0', x)], self.__time_horizon)
+                        self.__u1[state] = PiecewisePolynomial([P([0])], self.__time_horizon)
                     else:
                         self.__u1[state] = self.__terminal_state_dict[state].to_pwc_function_approximation(
                             self.__lazy_err_tol)
@@ -184,13 +213,13 @@ class MDP(object):
                         for miu in state.actions[action]:
                             state.actions[action][miu] = state.actions[action][miu].to_constant_function_approximation()
                     if state not in self.__terminal_state_dict:
-                        self.__u1[state] = PiecewisePolynomial([Poly('0', x)], self.__time_horizon)
+                        self.__u1[state] = PiecewisePolynomial([P([0])], self.__time_horizon)
                     else:
                         self.__u1[state] = self.__terminal_state_dict[state].to_constant_function_approximation()
         else:
             for state in self.states:
                 if state not in self.__terminal_state_dict:
-                    self.__u1[state] = PiecewisePolynomial([Poly('0', x)], self.__time_horizon)
+                    self.__u1[state] = PiecewisePolynomial([P([0])], self.__time_horizon)
                 else:
                     self.__u1[state] = self.__terminal_state_dict[state]
 
@@ -234,7 +263,7 @@ class MDP(object):
         else:
             best_pw = self.q(s, act_set[0], self.rewards, v)
             for a in act_set[1:]:
-                best_pw = max_piecewise(x, best_pw, self.q(s, a, self.rewards, v))
+                best_pw = max_piecewise(best_pw, self.q(s, a, self.rewards, v))
             best_pw.simplify()
             V_bar = best_pw
         # for dawdling
@@ -252,7 +281,8 @@ class MDP(object):
                 diff_p = new_polynomial_pieces[count] - new_polynomial_pieces[count - 1]
                 print('diffp:', diff_p)
                 # roots = diff_p.real_roots()
-                roots = sympy.solve(diff_p)
+                roots = np.roots(diff_p)
+                roots = roots.real[abs(roots.imag) < 1e-5]
                 print('roots:', roots)
                 if roots:
                     # print('bef r')
@@ -260,7 +290,7 @@ class MDP(object):
                     # print('aft r')
                     if new_bounds[count - 1] < root < new_bounds[count + 1]:
                         new_bounds[count] = root
-                        new_polynomial_pieces[count] = Poly(min_v, x)
+                        new_polynomial_pieces[count] = P([min_v])
                         count -= 1
                         continue
                 del new_polynomial_pieces[count - 1]
@@ -278,14 +308,14 @@ class MDP(object):
         # print('outcome: ', o[0], ' ', o[1], ' ', o[2])
         # for m in outcomes:
         # print('state: ', s, '-', m[0], 'abs/rel: ', m[1], 'prob: ', m[2], 'outcomes: ', outcomes[m])
-        Q = PiecewisePolynomial([Poly('0', x)], self.__time_horizon)
+        Q = PiecewisePolynomial([P([0])], self.__time_horizon)
         for miu in outcomes:
             # print('state: ', s, '-', self.mius[miu][0], 'abs/rel: ', self.mius[miu][1], 'prob: ', self.mius[miu][2], 'outcomes: ', outcomes[miu])
             if self.mius[miu][1] == ABS:
-                U = r[miu] + U_ABS(x, self.mius[miu][2], v[self.mius[miu][0]])
+                U = r[miu] + U_ABS(self.mius[miu][2], v[self.mius[miu][0]])
             elif self.mius[miu][1] == REL:
                 print('r', r[miu])
-                U = r[miu] + U_REL(x, self.mius[miu][2], v[self.mius[miu][0]])
+                U = r[miu] + U_REL(self.mius[miu][2], v[self.mius[miu][0]])
             else:
                 raise ValueError('The type of the miu time distribution function is wrong')
             Q += outcomes[miu] * U
@@ -299,9 +329,9 @@ class MDP(object):
 
         # def v_bar(s: State, r, v):
         # act_set = list(s.action_set)
-        #     if len(act_set) == 1:
-        #         # res = q(s, act_set[0], r, v)
-        #         # print('act: ', act_set[0], ' ', res)
+        # if len(act_set) == 1:
+        # # res = q(s, act_set[0], r, v)
+        # # print('act: ', act_set[0], ' ', res)
         #         # return res
         #         return q(s, act_set[0], r, v)
         #     else:

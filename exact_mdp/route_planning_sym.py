@@ -11,52 +11,52 @@ def init_mdp():
     state = [State('Home'),
              State('x2'),
              State('Work')]
-    miu = {'miu1': (state[0], REL, PiecewisePolynomial([P([0]),
-                                                        P([1]),
-                                                        P([0])],
+    miu = {'miu1': (state[0], REL, PiecewisePolynomial([Poly('0', x),
+                                                        Poly('1', x),
+                                                        Poly('0', x)],
                                                        [0, 1 / 6, 1 / 6, 7])),  # miu1
-           'miu2': (state[2], ABS, PiecewisePolynomial([P([0]),
-                                                        P([-16, 16/9]),
-                                                        P([56/3, -16/9]),
-                                                        P([0])],
+           'miu2': (state[2], ABS, PiecewisePolynomial([Poly('0', x),
+                                                        Poly('16/9 * x - 16', x),
+                                                        Poly('-16/9 * x + 56/3', x),
+                                                        Poly('0', x)],
                                                        [7, 9, 9.75, 10.5, 14])),  # miu2
-           'miu3': (state[1], REL, PiecewisePolynomial([P([0]),
-                                                        P([-1,1]),
-                                                        P([3, -1]),
-                                                        P([0])],
+           'miu3': (state[1], REL, PiecewisePolynomial([Poly('0', x),
+                                                        Poly('x - 1', x),
+                                                        Poly('-x + 3', x),
+                                                        Poly('0', x)],
                                                        [0, 1, 2, 3, 7])),  # miu3
-           'miu4': (state[1], REL, PiecewisePolynomial([P([0]),
-                                                        P([-1/2, 1]),
-                                                        P([5/2, -1]),
-                                                        P([0])],
+           'miu4': (state[1], REL, PiecewisePolynomial([Poly('0', x),
+                                                        Poly('x - 1/2', x),
+                                                        Poly('-x + 5/2', x),
+                                                        Poly('0', x)],
                                                        [0, 0.5, 1.5, 2.5, 7])),  # miu4
-           'miu5': (state[2], REL, PiecewisePolynomial([P([1])],
+           'miu5': (state[2], REL, PiecewisePolynomial([Poly('1', x)],
                                                        [1, 1]))}  # miu5
-    likelihood = [PiecewisePolynomial([P([0]),
-                                       P([1])],  # L1
+    likelihood = [PiecewisePolynomial([Poly('0', x),
+                                       Poly('1', x)],  # L1
                                       [7, 7 + 50 / 60, 14]),
-                  PiecewisePolynomial([P([1]),
-                                       P([0])],  # L2
+                  PiecewisePolynomial([Poly('1', x),
+                                       Poly('0', x)],  # L2
                                       [7, 7 + 50 / 60, 14]),
-                  PiecewisePolynomial([P([0]),
-                                       P([-11, 3/2]),
-                                       P([1]),
-                                       P([31/2, -3/2]),
-                                       P([0])],  # L3
+                  PiecewisePolynomial([Poly('0', x),
+                                       Poly('3/2 * x - 11', x),
+                                       Poly('1', x),
+                                       Poly('-3/2 * x + 31/2', x),
+                                       Poly('0', x)],  # L3
                                       [7, 7 + 20 / 60, 8, 9 + 40 / 60, 10 + 20 / 60, 14]),
-                  PiecewisePolynomial([P([1]),
-                                       P([12, -3/2]),
-                                       P([0]),
-                                       P([-14.5, 3/2]),
-                                       P([1])],  # L4
+                  PiecewisePolynomial([Poly('1', x),
+                                       Poly('-3/2 * x + 12', x),
+                                       Poly('0', x),
+                                       Poly('3/2 * x - 14.5', x),
+                                       Poly('1', x)],  # L4
                                       [7, 7 + 20 / 60, 8, 9 + 40 / 60, 10 + 20 / 60, 14]),
-                  PiecewisePolynomial([P([1])],  # L5
+                  PiecewisePolynomial([Poly('1', x)],  # L5
                                       [7, 14])]
-    reward = {'miu1': PiecewisePolynomial([P([0])], [7, 14]),
-              'miu2': PiecewisePolynomial([P([0])], [7, 14]),
-              'miu3': PiecewisePolynomial([P([0])], [7, 14]),
-              'miu4': PiecewisePolynomial([P([0])], [7, 14]),
-              'miu5': PiecewisePolynomial([P([0])], [7, 14])}
+    reward = {'miu1': PiecewisePolynomial([Poly('0', x)], [7, 14]),
+              'miu2': PiecewisePolynomial([Poly('0', x)], [7, 14]),
+              'miu3': PiecewisePolynomial([Poly('0', x)], [7, 14]),
+              'miu4': PiecewisePolynomial([Poly('0', x)], [7, 14]),
+              'miu5': PiecewisePolynomial([Poly('0', x)], [7, 14])}
     # reward_start = [PiecewisePolynomial([Poly('0', x)], [7, 14]),
     # PiecewisePolynomial([Poly('0', x)], [7, 14]),
     # PiecewisePolynomial([Poly('0', x)], [7, 14]),
@@ -83,7 +83,7 @@ def init_mdp():
     # state[1].value_function = PiecewisePolynomial([Poly('0', x)], [7, 14])
     # state[2].value_function = PiecewisePolynomial([Poly('0', x)], [7, 14])
     mdp = MDP(state, miu, reward, state[0],
-              {state[2]: PiecewisePolynomial([P([1]), P([12, -1]), P([0])], [7, 11, 12, 14])},
+              {state[2]: PiecewisePolynomial([Poly('1', x), Poly('-x + 12', x), Poly('0', x)], [7, 11, 12, 14])},
               [7, 14], lazy=1, pwc=0, lazy_error_tolerance=0.03)
     return mdp
 
