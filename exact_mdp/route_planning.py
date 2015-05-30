@@ -52,21 +52,6 @@ def init_mdp():
               'miu3': PiecewisePolynomial([P([0])], [7, 14]),
               'miu4': PiecewisePolynomial([P([0])], [7, 14]),
               'miu5': PiecewisePolynomial([P([0])], [7, 14])}
-    # reward_start = [PiecewisePolynomial([Poly('0', x)], [7, 14]),
-    # PiecewisePolynomial([Poly('0', x)], [7, 14]),
-    # PiecewisePolynomial([Poly('0', x)], [7, 14]),
-    #                 PiecewisePolynomial([Poly('0', x)], [7, 14]),
-    #                 PiecewisePolynomial([Poly('0', x)], [7, 14])]
-    # reward_arrival = [PiecewisePolynomial([Poly('0', x)], [7, 14]),
-    #                   PiecewisePolynomial([Poly('1', x), Poly('-x + 12', x), Poly('0', x)], [7, 11, 12, 14]),
-    #                   PiecewisePolynomial([Poly('0', x)], [7, 14]),
-    #                   PiecewisePolynomial([Poly('0', x)], [7, 14]),
-    #                   PiecewisePolynomial([Poly('0', x)], [7, 14])]
-    # reward_duration = [PiecewisePolynomial([Poly('0', x)], [7, 14]),
-    #                    PiecewisePolynomial([Poly('0', x)], [7, 14]),
-    #                    PiecewisePolynomial([Poly('0', x)], [7, 14]),
-    #                    PiecewisePolynomial([Poly('0', x)], [7, 14]),
-    #                    PiecewisePolynomial([Poly('0', x)], [7, 14])]
     # add actions to states
     state[0].add_action('taking train', 'miu1', likelihood[0])  # Miss the 8am train
     state[0].add_action('taking train', 'miu2', likelihood[1])  # Caught the 8am train
