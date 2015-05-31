@@ -30,6 +30,8 @@ def U_ABS(U, V):
 
 
 def U_REL(U, V):
+    print('urel u: ', U)
+    print('urel v: ', V)
     lower = V.bounds[0]
     upper = V.bounds[-1]
     h = PiecewisePolynomial([P([0])], [lower, upper])
@@ -43,6 +45,9 @@ def U_REL(U, V):
             # print('U_REL', i, j, f, g)
             f_piece = (f, U.bounds[i], U.bounds[i + 1])
             g_piece = (g, V.bounds[j], V.bounds[j + 1])
+            # print('=====', i, j, '======')
+            # print('f: ', f)
+            # print('g: ', g)
             piecewise_result = convolute_onepiece(f_piece, g_piece, lower, upper)
             h += piecewise_result
     h.simplify()
@@ -57,8 +62,8 @@ def convolute_onepiece(F, G, lower, upper):
     # special change for lazy approximation
     f = f(P([0, -1]))
     a_f, b_f = -b_f, -a_f
-    # print('f: ', f, ' a_f: ', a_f, ' b_f: ', b_f)
-    # print('g: ', g, ' a_g: ', a_g, ' b_g: ', b_g)
+    print('f: ', f, ' a_f: ', a_f, ' b_f: ', b_f)
+    print('g: ', g, ' a_g: ', a_g, ' b_g: ', b_g)
     # make sure ranges are in order, swap values if necessary
     if b_f - a_f > b_g - a_g:
         f, a_f, b_f, g, a_g, b_g = g, a_g, b_g, f, a_f, b_f
@@ -243,12 +248,16 @@ class MDP(object):
         # compute v_bar
         act_set = list(s.action_set)
         if len(act_set) == 1:
+            print('--len1', s, act_set[0], self.rewards, v)
             V_bar = self.q(s, act_set[0], self.rewards, v)
+            print('===len1', V_bar.polynomial_pieces)
             print('debug len=1', s, V_bar)
         else:
             best_pw = self.q(s, act_set[0], self.rewards, v)
             for a in act_set[1:]:
                 best_pw = max_piecewise(best_pw, self.q(s, a, self.rewards, v))
+            print('--else', s, act_set[0], self.rewards, v)
+            print('===else', best_pw.polynomial_pieces)
             best_pw.simplify()
             V_bar = best_pw
             print('debug else', s, V_bar)
@@ -257,6 +266,7 @@ class MDP(object):
         new_bounds = V_bar.bounds.copy()
         new_polynomial_pieces = V_bar.polynomial_pieces.copy()
         print('bef minv')
+        print('bb', new_polynomial_pieces)
         min_v = V_bar(new_bounds[-1])
         print('befbef count')
         count = len(new_bounds) - 2  # from the penultimate turning point
@@ -301,6 +311,7 @@ class MDP(object):
             elif self.mius[miu][1] == REL:
                 print('r', r[miu])
                 U = r[miu] + U_REL(self.mius[miu][2], v[self.mius[miu][0]])
+                print('UUUUUUU', U)
             else:
                 raise ValueError('The type of the miu time distribution function is wrong')
             Q += outcomes[miu] * U
