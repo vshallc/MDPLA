@@ -126,7 +126,7 @@ class State(object):
     # _value_function = None
 
     def __init__(self, label):
-        self.__label = label
+        self.label = label
         self.actions = dict()
 
     def __str__(self):
@@ -136,10 +136,6 @@ class State(object):
         if action not in self.actions:
             self.actions[action] = dict()
         self.actions[action][miu] = likelihood
-
-    @property
-    def label(self):
-        return self.__label
 
     def get_outcomes(self, action):
         return self.actions[action]
@@ -151,7 +147,7 @@ class State(object):
 
 class Action(object):
     def __init__(self, label):
-        self.__label = label
+        self.label = label
 
 
 class MDP(object):
@@ -159,48 +155,43 @@ class MDP(object):
                  initial_state, terminal_state_dict, time_horizon,
                  lazy=0, pwc=1, lazy_error_tolerance=0.1):
         self.states = states  # State set
-        # self.__A = A      # Action set
         self.mius = mius
-        # self.__R_s = R_s  # Reward of start time
-        # self.__R_a = R_a  # Reward of arrival time
-        # self.__R_d = R_d  # Reward of duration
         self.rewards = rewards
-        self.__initial_state = initial_state
-        self.__terminal_state_dict = terminal_state_dict
-        self.__time_horizon = time_horizon
-        self.__u1 = dict()
-        self.__lazy = lazy
-        self.__pwc = pwc
-        self.__lazy_err_tol = lazy_error_tolerance
+        self.initial_state = initial_state
+        self.terminal_state_dict = terminal_state_dict
+        self.time_horizon = time_horizon
+        self.u1 = dict()
+        self.lazy = lazy
+        self.pwc = pwc
+        self.lazy_err_tol = lazy_error_tolerance
         self.reset_mdp()
 
     def reset_mdp(self):
         # self.__u1.clear()
-        if self.__lazy:
-            if self.__pwc:
+        if self.lazy:
+            if self.pwc:
                 for m in self.mius:
                     self.mius[m] = (self.mius[m][0],
                                     self.mius[m][1],
-                                    self.mius[m][2].to_pwc_function_approximation(self.__lazy_err_tol))
+                                    self.mius[m][2].to_pwc_function_approximation(self.lazy_err_tol))
                 # print('miu!!!')
                 # for s in self.states:
                 # for a in s.action_set:
                 # outcomes = s.get_outcomes(a)
                 # for miu in outcomes:
                 # print(miu)
-                # print('miu-')
                 for m in self.rewards:
-                    self.rewards[m] = self.rewards[m].to_pwc_function_approximation(self.__lazy_err_tol)
+                    self.rewards[m] = self.rewards[m].to_pwc_function_approximation(self.lazy_err_tol)
                 for state in self.states:
                     for action in state.actions:
                         for miu in state.actions[action]:
                             state.actions[action][miu] = state.actions[action][miu].to_pwc_function_approximation(
-                                self.__lazy_err_tol)
-                    if state not in self.__terminal_state_dict:
-                        self.__u1[state] = PiecewisePolynomial([P([0])], self.__time_horizon)
+                                self.lazy_err_tol)
+                    if state not in self.terminal_state_dict:
+                        self.u1[state] = PiecewisePolynomial([P([0])], self.time_horizon)
                     else:
-                        self.__u1[state] = self.__terminal_state_dict[state].to_pwc_function_approximation(
-                            self.__lazy_err_tol)
+                        self.u1[state] = self.terminal_state_dict[state].to_pwc_function_approximation(
+                            self.lazy_err_tol)
             else:
                 for m in self.mius:
                     self.mius[m] = (self.mius[m][0],
@@ -212,29 +203,21 @@ class MDP(object):
                     for action in state.actions:
                         for miu in state.actions[action]:
                             state.actions[action][miu] = state.actions[action][miu].to_constant_function_approximation()
-                    if state not in self.__terminal_state_dict:
-                        self.__u1[state] = PiecewisePolynomial([P([0])], self.__time_horizon)
+                    if state not in self.terminal_state_dict:
+                        self.u1[state] = PiecewisePolynomial([P([0])], self.time_horizon)
                     else:
-                        self.__u1[state] = self.__terminal_state_dict[state].to_constant_function_approximation()
+                        self.u1[state] = self.terminal_state_dict[state].to_constant_function_approximation()
         else:
             for state in self.states:
-                if state not in self.__terminal_state_dict:
-                    self.__u1[state] = PiecewisePolynomial([P([0])], self.__time_horizon)
+                if state not in self.terminal_state_dict:
+                    self.u1[state] = PiecewisePolynomial([P([0])], self.time_horizon)
                     # print('debug:init', state, self.__u1[state])
                 else:
-                    self.__u1[state] = self.__terminal_state_dict[state]
-
-    @property
-    def initial_state(self):
-        return self.__initial_state
-
-    @property
-    def terminal_state_dict(self):
-        return self.__terminal_state_dict
+                    self.u1[state] = self.terminal_state_dict[state]
 
     def value_iteration(self):
         # V(x,t) = sup_{t'>=t}(\int^{t'}_t K(x,s) ds + V_bar(x,t'))
-        u1 = self.__u1
+        u1 = self.u1
         terminals = self.terminal_state_dict
         i = 0
         while True:
@@ -246,7 +229,7 @@ class MDP(object):
                     continue
                 print('state: ', s)
                 u1[s] = self.state_value(s, u0)
-                if u1[s] != u0[s]:
+                if stop_flag and u1[s] != u0[s]:
                     stop_flag = False
             i += 1
             # print('iter',i)
@@ -258,23 +241,24 @@ class MDP(object):
     def state_value(self, s: State, v):
         # This is only for piecewise linear function
         # compute v_bar
-        for pie in v[s].polynomial_pieces:
-            print('debug:v', pie)
         act_set = list(s.action_set)
         if len(act_set) == 1:
             V_bar = self.q(s, act_set[0], self.rewards, v)
+            print('debug len=1', s, V_bar)
         else:
             best_pw = self.q(s, act_set[0], self.rewards, v)
             for a in act_set[1:]:
                 best_pw = max_piecewise(best_pw, self.q(s, a, self.rewards, v))
             best_pw.simplify()
             V_bar = best_pw
+            print('debug else', s, V_bar)
         # for dawdling
         # v_b = v_bar(s, self.rewards, v)
-        print('debug', s, V_bar)
         new_bounds = V_bar.bounds.copy()
         new_polynomial_pieces = V_bar.polynomial_pieces.copy()
+        print('bef minv')
         min_v = V_bar(new_bounds[-1])
+        print('befbef count')
         count = len(new_bounds) - 2  # from the penultimate turning point
         while count > 0:
             print('count: ', count)
@@ -288,9 +272,7 @@ class MDP(object):
                 roots = roots.real[abs(roots.imag) < 1e-5]
                 print('roots:', roots)
                 if roots:
-                    # print('bef r')
                     root = float(roots[0])
-                    # print('aft r')
                     if new_bounds[count - 1] < root < new_bounds[count + 1]:
                         new_bounds[count] = root
                         new_polynomial_pieces[count] = P([min_v])
@@ -311,7 +293,7 @@ class MDP(object):
         # print('outcome: ', o[0], ' ', o[1], ' ', o[2])
         # for m in outcomes:
         # print('state: ', s, '-', m[0], 'abs/rel: ', m[1], 'prob: ', m[2], 'outcomes: ', outcomes[m])
-        Q = PiecewisePolynomial([P([0])], self.__time_horizon)
+        Q = PiecewisePolynomial([P([0])], self.time_horizon)
         for miu in outcomes:
             print('state: ', s, '-', self.mius[miu][0], 'abs/rel: ', self.mius[miu][1], 'prob: ', self.mius[miu][2], 'outcomes: ', outcomes[miu])
             if self.mius[miu][1] == ABS:
@@ -322,41 +304,10 @@ class MDP(object):
             else:
                 raise ValueError('The type of the miu time distribution function is wrong')
             Q += outcomes[miu] * U
-        if self.__lazy:
-            if self.__pwc:
-                Q = Q.to_pwc_function_approximation(self.__lazy_err_tol)
+        if self.lazy:
+            if self.pwc:
+                Q = Q.to_pwc_function_approximation(self.lazy_err_tol)
             else:
                 Q = Q.to_constant_function_approximation()
         # return sum([outcomes[miu] * u(miu, r, v) for miu in outcomes])
         return Q
-
-        # def v_bar(s: State, r, v):
-        # act_set = list(s.action_set)
-        # if len(act_set) == 1:
-        # # res = q(s, act_set[0], r, v)
-        # # print('act: ', act_set[0], ' ', res)
-        #         # return res
-        #         return q(s, act_set[0], r, v)
-        #     else:
-        #         best_pw = q(s, act_set[0], r, v)
-        #         # print('act: ', act_set[0], ' ', best_pw)
-        #         for a in act_set[1:]:
-        #             best_pw = max_piecewise(x, best_pw, q(s, a, r, v))
-        #             # print('act: ', a, ' ', best_pw)
-        #         # print('best_pw: ', best_pw)
-        #         return best_pw
-
-
-        # def u(miu, r, v):
-        #     if miu[1] == ABS:
-        #         # res = r[miu] + U_ABS(x, miu[2], v[miu[0]])
-        #         # print('ABS: ', res)
-        #         # return res
-        #         return r[miu] + U_ABS(x, miu[2], v[miu[0]])
-        #     elif miu[1] == REL:
-        #         # res = r[miu] + U_REL(x, miu[2], v[miu[0]])
-        #         # print('REL: ', res)
-        #         # return res
-        #         return r[miu] + U_REL(x, miu[2], v[miu[0]])
-        #     else:
-        #         raise ValueError('The type of the miu time distribution function is wrong')
