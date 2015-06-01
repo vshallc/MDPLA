@@ -6,47 +6,18 @@ def init_mdp():
     state = [State('Home'),
              State('x2'),
              State('Work')]
-    miu = {'miu1': (state[0], REL, PiecewisePolynomial([P([0]),
-                                                        P([1]),
-                                                        P([0])],
-                                                       [0, 1 / 6, 1 / 6, 7])),  # miu1
-           'miu2': (state[2], ABS, PiecewisePolynomial([P([0]),
-                                                        P([-16, 16/9]),
-                                                        P([56/3, -16/9]),
-                                                        P([0])],
-                                                       [7, 9, 9.75, 10.5, 14])),  # miu2
-           'miu3': (state[1], REL, PiecewisePolynomial([P([0]),
-                                                        P([-1, 1]),
-                                                        P([3, -1]),
-                                                        P([0])],
-                                                       [0, 1, 2, 3, 7])),  # miu3
-           'miu4': (state[1], REL, PiecewisePolynomial([P([0]),
-                                                        P([-1/2, 1]),
-                                                        P([5/2, -1]),
-                                                        P([0])],
-                                                       [0, 0.5, 1.5, 2.5, 7])),  # miu4
-           'miu5': (state[2], REL, PiecewisePolynomial([P([1])],
-                                                       [1, 1]))}  # miu5
-    likelihood = [PiecewisePolynomial([P([0]),
-                                       P([1])],  # L1
-                                      [7, 7 + 50 / 60, 14]),
-                  PiecewisePolynomial([P([1]),
-                                       P([0])],  # L2
-                                      [7, 7 + 50 / 60, 14]),
-                  PiecewisePolynomial([P([0]),
-                                       P([-11, 3/2]),
-                                       P([1]),
-                                       P([31/2, -3/2]),
-                                       P([0])],  # L3
-                                      [7, 7 + 20 / 60, 8, 9 + 40 / 60, 10 + 20 / 60, 14]),
-                  PiecewisePolynomial([P([1]),
-                                       P([12, -3/2]),
-                                       P([0]),
-                                       P([-14.5, 3/2]),
-                                       P([1])],  # L4
-                                      [7, 7 + 20 / 60, 8, 9 + 40 / 60, 10 + 20 / 60, 14]),
-                  PiecewisePolynomial([P([1])],  # L5
-                                      [7, 14])]
+    miu = {'miu1': (state[0], REL, PiecewisePolynomial([P([1])], [1 / 6, 1 / 6])),  # miu1
+           'miu2': (state[2], ABS, PiecewisePolynomial([P([-16, 16/9]), P([56/3, -16/9])], [9, 9.75, 10.5])),  # miu2
+           'miu3': (state[1], REL, PiecewisePolynomial([P([-1, 1]), P([3, -1])], [1, 2, 3])),  # miu3
+           'miu4': (state[1], REL, PiecewisePolynomial([P([-1/2, 1]), P([5/2, -1])], [0.5, 1.5, 2.5])),  # miu4
+           'miu5': (state[2], REL, PiecewisePolynomial([P([1])], [1, 1]))}  # miu5
+    likelihood = [PiecewisePolynomial([P([1])], [7 + 50 / 60, 14]),  # L1
+                  PiecewisePolynomial([P([1])], [7, 7 + 50 / 60]),  # L2
+                  PiecewisePolynomial([P([-11, 3/2]), P([1]), P([31/2, -3/2])],
+                                      [7 + 20 / 60, 8, 9 + 40 / 60, 10 + 20 / 60]),  # L3
+                  PiecewisePolynomial([P([1]), P([12, -3/2]), P([0]), P([-14.5, 3/2]), P([1])],
+                                      [7, 7 + 20 / 60, 8, 9 + 40 / 60, 10 + 20 / 60, 14]),  # L4
+                  PiecewisePolynomial([P([1])], [7, 14])]  # L5
     reward = {'miu1': PiecewisePolynomial([P([0])], [7, 14]),
               'miu2': PiecewisePolynomial([P([0])], [7, 14]),
               'miu3': PiecewisePolynomial([P([0])], [7, 14]),

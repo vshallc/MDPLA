@@ -64,7 +64,7 @@ class PiecewisePolynomial(object):
         for i in range(1, len(self.bounds)):
             cc = (self.bounds[i - 1] <= v < self.bounds[i])
             condition_list.append(cc)
-        print(v, condition_list, self.polynomial_pieces)
+        # print(v, condition_list, self.polynomial_pieces)
         return np.piecewise(v, condition_list, self.polynomial_pieces)
 
     def __add__(self, other):
@@ -250,11 +250,11 @@ class PiecewisePolynomial(object):
 
 
 def max_piece(f, g, lower, upper):
-    print('f,g: ', f, g)
+    # print('f,g: ', f, g)
     # roots = (f - g).real_roots()
     diff = f - g
     if diff.degree() > 0:
-        roots = np.roots(diff)
+        roots = np.roots(diff.coef)
         roots = roots.real[abs(roots.imag) < 1e-5]
     else:
         roots = []

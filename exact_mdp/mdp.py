@@ -30,8 +30,8 @@ def U_ABS(U, V):
 
 
 def U_REL(U, V):
-    print('urel u: ', U)
-    print('urel v: ', V)
+    # print('urel u: ', U)
+    # print('urel v: ', V)
     lower = V.bounds[0]
     upper = V.bounds[-1]
     h = PiecewisePolynomial([P([0])], [lower, upper])
@@ -62,8 +62,8 @@ def convolute_onepiece(F, G, lower, upper):
     # special change for lazy approximation
     f = f(P([0, -1]))
     a_f, b_f = -b_f, -a_f
-    print('f: ', f, ' a_f: ', a_f, ' b_f: ', b_f)
-    print('g: ', g, ' a_g: ', a_g, ' b_g: ', b_g)
+    # print('f: ', f, ' a_f: ', a_f, ' b_f: ', b_f)
+    # print('g: ', g, ' a_g: ', a_g, ' b_g: ', b_g)
     # make sure ranges are in order, swap values if necessary
     if b_f - a_f > b_g - a_g:
         f, a_f, b_f, g, a_g, b_g = g, a_g, b_g, f, a_f, b_f
@@ -74,7 +74,7 @@ def convolute_onepiece(F, G, lower, upper):
     bl = lower if bl < lower else bl
     bu = upper if bu > upper else bu
     if a_f == b_f:
-        return PiecewisePolynomial([P([f(a_f) * g(P([-a_f, 1]))])], [bl, bu])
+        return PiecewisePolynomial([f(a_f) * g(P([-a_f, 1]))], [bl, bu])
     else:
         cfy = f.coef  # f.subs(x, y)
         csub = P([1, -1])  # x-y where only y is seen as variable
@@ -230,10 +230,13 @@ class MDP(object):
             u0 = u1.copy()
             stop_flag = True
             for s in self.states:
+                print('state: ', s)
+                print('value: ', u0[s])
                 if s in terminals:
                     continue
-                print('state: ', s)
+                print('1')
                 u1[s] = self.state_value(s, u0)
+                print('2')
                 if stop_flag and u1[s] != u0[s]:
                     stop_flag = False
             i += 1
@@ -248,35 +251,26 @@ class MDP(object):
         # compute v_bar
         act_set = list(s.action_set)
         if len(act_set) == 1:
-            print('--len1', s, act_set[0], self.rewards, v)
             V_bar = self.q(s, act_set[0], self.rewards, v)
-            print('===len1', V_bar.polynomial_pieces)
-            print('debug len=1', s, V_bar)
         else:
             best_pw = self.q(s, act_set[0], self.rewards, v)
             for a in act_set[1:]:
                 best_pw = max_piecewise(best_pw, self.q(s, a, self.rewards, v))
-            print('--else', s, act_set[0], self.rewards, v)
-            print('===else', best_pw.polynomial_pieces)
             best_pw.simplify()
             V_bar = best_pw
-            print('debug else', s, V_bar)
         # for dawdling
         # v_b = v_bar(s, self.rewards, v)
         new_bounds = V_bar.bounds.copy()
         new_polynomial_pieces = V_bar.polynomial_pieces.copy()
-        print('bef minv')
-        print('bb', new_polynomial_pieces)
         min_v = V_bar(new_bounds[-1])
-        print('befbef count')
         count = len(new_bounds) - 2  # from the penultimate turning point
         while count > 0:
-            print('count: ', count)
+            # print('count: ', count)
             tmp = V_bar(new_bounds[count])
             if tmp < min_v:
                 # roots = sympy.solve(new_polynomial_pieces[count] - new_polynomial_pieces[count - 1], x)
                 diff_p = new_polynomial_pieces[count] - new_polynomial_pieces[count - 1]
-                print('diffp:', diff_p)
+                # print('diffp:', diff_p)
                 # roots = diff_p.real_roots()
                 roots = np.roots(diff_p)
                 roots = roots.real[abs(roots.imag) < 1e-5]
@@ -311,7 +305,6 @@ class MDP(object):
             elif self.mius[miu][1] == REL:
                 print('r', r[miu])
                 U = r[miu] + U_REL(self.mius[miu][2], v[self.mius[miu][0]])
-                print('UUUUUUU', U)
             else:
                 raise ValueError('The type of the miu time distribution function is wrong')
             Q += outcomes[miu] * U
