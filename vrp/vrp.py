@@ -45,7 +45,7 @@ def vrp2mdp(vrp):
                         for traffic in node_from.neighbours[node_to]:
                             miu_label = link_label + ':' + str(traffic.label)
                             mius[miu_label] = (state_to, emdp.REL, traffic.distribution)
-                            rewards[miu_label] = PiecewisePolynomial([Poly('0', x)], node_from.timespan)
+                            rewards[miu_label] = PiecewisePolynomial([P([0])], node_from.timespan)
                             state_from.add_action('move:' + link_label, miu_label, traffic.likelihood)
                     for t in comb:
                         if tasks[t].location == r * col_max + c:
@@ -89,7 +89,7 @@ def make_label(node, tasks, task_comb):
 def random_vrp(row, col, task_num, timespan=None, terminate_function=None):
     if timespan is None:
         timespan = [0, 40]
-        terminate_function = PiecewisePolynomial([Poly('0', x), Poly(-10 * x + 200, x), Poly(float('-10000'), x)],
+        terminate_function = PiecewisePolynomial([P([0]), P([200, -10]), P([-10000])],
                                                  [0, 20, 30, 40])
     company_row = random.randint(0, row - 1)
     company_col = random.randint(0, col - 1)
@@ -168,11 +168,11 @@ def travel_outcomes(from_node, to_node):
     k2 = 1 / (rush_span[3] - rush_span[2])
     # rush hour
     # likelihood
-    l1 = Poly('0', x)
-    l2 = Poly(sympy.sympify(k1 * (x - rush_span[0]), x))
-    l3 = Poly('1', x)
-    l4 = Poly(sympy.sympify(-k2 * (x - rush_span[3]), x))
-    l5 = Poly('0', x)
+    l1 = P([0])
+    l2 = P([-k1 * rush_span[0], k1])
+    l3 = P([1])
+    l4 = P([k2 * rush_span[3], -k2])
+    l5 = P([0])
     pw_rush = [l1, l2, l3, l4, l5]
     bd_rush = timespan[:]
     bd_rush[1:1] = rush_span
@@ -184,11 +184,11 @@ def travel_outcomes(from_node, to_node):
     traffic_rush = Traffic('rush', likelihood_rush, distribution_rush)
     # off peak
     # likelihood
-    l1 = Poly('1', x)
-    l2 = Poly(sympy.sympify(-k1 * (x - rush_span[1]), x))
-    l3 = Poly('0', x)
-    l4 = Poly(sympy.sympify(k2 * (x - rush_span[2]), x))
-    l5 = Poly('1', x)
+    l1 = P([1])
+    l2 = P([k1 * rush_span[1], k1])
+    l3 = P([0])
+    l4 = P([-k2 * rush_span[2], k2])
+    l5 = P([1])
     pw_off = [l1, l2, l3, l4, l5]
     bd_off = timespan[:]
     bd_off[1:1] = rush_span
@@ -230,20 +230,20 @@ class Task(object):
         # self.reward = reward
         self.penalty = penalty
         # self.time_cost = time_cost
-        self.reward_success = PiecewisePolynomial([Poly(reward, x)], timespan)
-        self.reward_failure = PiecewisePolynomial([Poly('0', x)], timespan)
+        self.reward_success = PiecewisePolynomial([P([reward])], timespan)
+        self.reward_failure = PiecewisePolynomial([P([0])], timespan)
         bounds = timespan.copy()
         bounds[1:1] = time_window
-        self.likelihood_success = PiecewisePolynomial([Poly('0', x), Poly('1', x), Poly('0', x)], bounds.copy())
-        self.likelihood_failure = PiecewisePolynomial([Poly('1', x), Poly('0', x), Poly('1', x)], bounds.copy())
-        self.distribution_success = PiecewisePolynomial([Poly(1 / (timecostspan[1] - timecostspan[0]), x)],
+        self.likelihood_success = PiecewisePolynomial([P([0]), P([1]), P([0])], bounds.copy())
+        self.likelihood_failure = PiecewisePolynomial([P([1]), P([0]), P([1])], bounds.copy())
+        self.distribution_success = PiecewisePolynomial([P([1 / (timecostspan[1] - timecostspan[0])])],
                                                         timecostspan)
-        self.distribution_failure = PiecewisePolynomial([Poly(1 / (timecostspan[1] - timecostspan[0]), x)],
+        self.distribution_failure = PiecewisePolynomial([P([1 / (timecostspan[1] - timecostspan[0])])],
                                                         timecostspan)
         # penalty
-        self.reward_penalty = PiecewisePolynomial([Poly(penalty, x)], timespan)
-        self.likelihood_penalty = PiecewisePolynomial([Poly('1', x)], timespan)
-        self.distribution_penalty = PiecewisePolynomial([Poly('0', x)], [0, 0])
+        self.reward_penalty = PiecewisePolynomial([P([penalty])], timespan)
+        self.likelihood_penalty = PiecewisePolynomial([P([1])], timespan)
+        self.distribution_penalty = PiecewisePolynomial([P([0])], [0, 0])
 
 
 class VRP(object):

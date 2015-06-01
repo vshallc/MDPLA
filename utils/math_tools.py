@@ -14,20 +14,20 @@ def norm_pdf_linear_approximation(mu, sigma, timespan):
     new_polynomial_pieces = []
     new_bound = [timespan[0]]
     if bound_left >= timespan[1] or bound_right <= timespan[0]:
-        return PiecewisePolynomial([Poly('0', x)], timespan[:])
+        return PiecewisePolynomial([P([0])], timespan[:])
     if bound_left > timespan[0]:
-        new_polynomial_pieces.append(Poly('0', x))
+        new_polynomial_pieces.append(P([0]))
         new_bound.append(bound_left)
     if timespan[0] < mu < timespan[1]:
-        new_polynomial_pieces.append(Poly(k*x+h, x))
-        new_polynomial_pieces.append(Poly(-k*x+h, x))
+        new_polynomial_pieces.append(P([h, k]))
+        new_polynomial_pieces.append(P([h, -k]))
         new_bound.append(mu)
     elif mu <= timespan[0]:
-        new_polynomial_pieces.append(Poly(-k*x+h, x))
+        new_polynomial_pieces.append(P([h, -k]))
     else:  # mu >= timespan[1]
-        new_polynomial_pieces.append(Poly(k*x+h, x))
+        new_polynomial_pieces.append(P([h, k]))
     if bound_right < timespan[1]:
-        new_polynomial_pieces.append(Poly('0', x))
+        new_polynomial_pieces.append(P([0]))
         new_bound.append(bound_right)
     new_bound.append(timespan[1])
     return PiecewisePolynomial(new_polynomial_pieces, new_bound)

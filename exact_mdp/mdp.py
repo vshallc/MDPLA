@@ -30,8 +30,8 @@ def U_ABS(U, V):
 
 
 def U_REL(U, V):
-    # print('urel u: ', U)
-    # print('urel v: ', V)
+    print('urel u: ', U)
+    print('urel v: ', V)
     lower = V.bounds[0]
     upper = V.bounds[-1]
     h = PiecewisePolynomial([P([0])], [lower, upper])
@@ -40,15 +40,16 @@ def U_REL(U, V):
             f = U.polynomial_pieces[i]
             g = V.polynomial_pieces[j]
             if (f.degree() == 0 and f.coef[0] == 0) or (g.degree() == 0 and g.coef[0] == 0):
-                # print('zero')
+                print('zero')
                 continue
             # print('U_REL', i, j, f, g)
             f_piece = (f, U.bounds[i], U.bounds[i + 1])
             g_piece = (g, V.bounds[j], V.bounds[j + 1])
-            # print('=====', i, j, '======')
+            print('-----', i, j, '-----')
             # print('f: ', f)
             # print('g: ', g)
             piecewise_result = convolute_onepiece(f_piece, g_piece, lower, upper)
+            print('conv: ', piecewise_result)
             h += piecewise_result
     h.simplify()
     return h
@@ -62,8 +63,8 @@ def convolute_onepiece(F, G, lower, upper):
     # special change for lazy approximation
     f = f(P([0, -1]))
     a_f, b_f = -b_f, -a_f
-    # print('f: ', f, ' a_f: ', a_f, ' b_f: ', b_f)
-    # print('g: ', g, ' a_g: ', a_g, ' b_g: ', b_g)
+    print('f: ', f, ' a_f: ', a_f, ' b_f: ', b_f)
+    print('g: ', g, ' a_g: ', a_g, ' b_g: ', b_g)
     # make sure ranges are in order, swap values if necessary
     if b_f - a_f > b_g - a_g:
         f, a_f, b_f, g, a_g, b_g = g, a_g, b_g, f, a_f, b_f
@@ -231,19 +232,18 @@ class MDP(object):
             stop_flag = True
             for s in self.states:
                 print('state: ', s)
-                print('value: ', u0[s])
+                print('value pre: ', u0[s])
                 if s in terminals:
                     continue
-                print('1')
                 u1[s] = self.state_value(s, u0)
-                print('2')
                 if stop_flag and u1[s] != u0[s]:
                     stop_flag = False
+                print('value aft: ', u1[s])
             i += 1
             # print('iter',i)
-            if stop_flag or i > 5:
-                if i > 5:
-                    print('i>5')
+            if stop_flag or i > 25:
+                if i > 25:
+                    print('i>25')
                 return u0
 
     def state_value(self, s: State, v):
@@ -254,8 +254,13 @@ class MDP(object):
             V_bar = self.q(s, act_set[0], self.rewards, v)
         else:
             best_pw = self.q(s, act_set[0], self.rewards, v)
+            print('===ACT', act_set[0])
+            print('===BEST', best_pw)
             for a in act_set[1:]:
-                best_pw = max_piecewise(best_pw, self.q(s, a, self.rewards, v))
+                qq = self.q(s, a, self.rewards, v)
+                best_pw = max_piecewise(best_pw, qq)
+                print('===ACT', a)
+                print('===BEST', qq)
             best_pw.simplify()
             V_bar = best_pw
         # for dawdling
@@ -272,14 +277,14 @@ class MDP(object):
                 diff_p = new_polynomial_pieces[count] - new_polynomial_pieces[count - 1]
                 # print('diffp:', diff_p)
                 # roots = diff_p.real_roots()
-                roots = np.roots(diff_p)
+                roots = np.roots(diff_p.coef)
                 roots = roots.real[abs(roots.imag) < 1e-5]
                 print('roots:', roots)
-                if roots:
+                if len(roots):
                     root = float(roots[0])
                     if new_bounds[count - 1] < root < new_bounds[count + 1]:
                         new_bounds[count] = root
-                        new_polynomial_pieces[count] = P([min_v])
+                        new_polynomial_pieces[count] = P(min_v)
                         count -= 1
                         continue
                 del new_polynomial_pieces[count - 1]
@@ -303,10 +308,10 @@ class MDP(object):
             if self.mius[miu][1] == ABS:
                 U = r[miu] + U_ABS(self.mius[miu][2], v[self.mius[miu][0]])
             elif self.mius[miu][1] == REL:
-                print('r', r[miu])
                 U = r[miu] + U_REL(self.mius[miu][2], v[self.mius[miu][0]])
             else:
                 raise ValueError('The type of the miu time distribution function is wrong')
+            print('===U', U)
             Q += outcomes[miu] * U
         if self.lazy:
             if self.pwc:
