@@ -30,8 +30,8 @@ def U_ABS(U, V):
 
 
 def U_REL(U, V):
-    print('urel u: ', U)
-    print('urel v: ', V)
+    # print('urel u: ', U)
+    # print('urel v: ', V)
     lower = V.bounds[0]
     upper = V.bounds[-1]
     h = PiecewisePolynomial([P([0])], [lower, upper])
@@ -40,18 +40,19 @@ def U_REL(U, V):
             f = U.polynomial_pieces[i]
             g = V.polynomial_pieces[j]
             if (f.degree() == 0 and f.coef[0] == 0) or (g.degree() == 0 and g.coef[0] == 0):
-                print('zero')
+                # print('zero')
                 continue
             # print('U_REL', i, j, f, g)
             f_piece = (f, U.bounds[i], U.bounds[i + 1])
             g_piece = (g, V.bounds[j], V.bounds[j + 1])
-            print('-----', i, j, '-----')
+            # print('-----', i, j, '-----')
             # print('f: ', f)
             # print('g: ', g)
             piecewise_result = convolute_onepiece(f_piece, g_piece, lower, upper)
-            print('conv: ', piecewise_result)
+            # print('conv: ', piecewise_result)
             h += piecewise_result
     h.simplify()
+    # print('conv res: ', h)
     return h
 
 
@@ -63,8 +64,8 @@ def convolute_onepiece(F, G, lower, upper):
     # special change for lazy approximation
     f = f(P([0, -1]))
     a_f, b_f = -b_f, -a_f
-    print('f: ', f, ' a_f: ', a_f, ' b_f: ', b_f)
-    print('g: ', g, ' a_g: ', a_g, ' b_g: ', b_g)
+    # print('f: ', f, ' a_f= ', a_f, ' b_f= ', b_f)
+    # print('g: ', g, ' a_g= ', a_g, ' b_g= ', b_g)
     # make sure ranges are in order, swap values if necessary
     if b_f - a_f > b_g - a_g:
         f, a_f, b_f, g, a_g, b_g = g, a_g, b_g, f, a_f, b_f
@@ -77,7 +78,7 @@ def convolute_onepiece(F, G, lower, upper):
     if a_f == b_f:
         return PiecewisePolynomial([f(a_f) * g(P([-a_f, 1]))], [bl, bu])
     else:
-        cfy = f.coef  # f.subs(x, y)
+        cfy = np.asarray([f.coef]).transpose()  # f.subs(x, y)
         csub = P([1, -1])  # x-y where only y is seen as variable
         gda1 = g.degree() + 1
         cgxy = np.zeros((gda1, gda1))
@@ -91,7 +92,7 @@ def convolute_onepiece(F, G, lower, upper):
         fmg = np.zeros((r + fda1 - 1, c))
         for i in range(fda1):  # f.subs(x,y) * g.subs(x, x - y)
             fmg[i:i + r] = fmg[i:i + r] + cfy[i] * cgxy
-        intfg = np.polynomial.polynomial.polyint(cgxy)  # integration
+        intfg = np.polynomial.polynomial.polyint(fmg)  # integration
         b = [bl]
         p = []
         b1 = b_f + a_g
@@ -106,7 +107,7 @@ def convolute_onepiece(F, G, lower, upper):
             intfgsub2 = P(intfg[0])
             for i in range(1, r):
                 intfgsub1 += intfg[i] * csub ** i
-                intfgsub2 + intfg[i] * a_f ** i
+                intfgsub2 += intfg[i] * a_f ** i
             p.append(intfgsub1 - intfgsub2)  # p.append(Poly(i.subs(y, x - a_g) - i.subs(y, a_f), x))
         if b[-1] < b2:
             b.append(b2)
@@ -114,7 +115,7 @@ def convolute_onepiece(F, G, lower, upper):
             intfgsub2 = P(intfg[0])
             for i in range(1, r):
                 intfgsub1 += intfg[i] * b_f ** i
-                intfgsub2 + intfg[i] * a_f ** i
+                intfgsub2 += intfg[i] * a_f ** i
             p.append(intfgsub1 - intfgsub2)  # p.append(Poly(i.subs(y, b_f) - i.subs(y, a_f), x))
         if b[-1] < bu:
             b.append(bu)
@@ -123,7 +124,7 @@ def convolute_onepiece(F, G, lower, upper):
             intfgsub2 = P(intfg[0])
             for i in range(1, r):
                 intfgsub1 += intfg[i] * b_f ** i
-                intfgsub2 + intfg[i] * csub ** i
+                intfgsub2 += intfg[i] * csub ** i
             p.append(intfgsub1 - intfgsub2)  # p.append(Poly(i.subs(y, b_f) - i.subs(y, x - b_g), x))
         return PiecewisePolynomial(p, b)
 
@@ -227,18 +228,18 @@ class MDP(object):
         terminals = self.terminal_state_dict
         i = 0
         while True:
-            print('========= iter =========: ', i)
+            # print('========= iter =========: ', i)
             u0 = u1.copy()
             stop_flag = True
             for s in self.states:
-                print('state: ', s)
-                print('value pre: ', u0[s])
                 if s in terminals:
                     continue
+                # print('state: ', s)
+                # print('value pre: ', u0[s])
                 u1[s] = self.state_value(s, u0)
                 if stop_flag and u1[s] != u0[s]:
                     stop_flag = False
-                print('value aft: ', u1[s])
+                # print('value aft: ', u1[s])
             i += 1
             # print('iter',i)
             if stop_flag or i > 25:
@@ -254,13 +255,9 @@ class MDP(object):
             V_bar = self.q(s, act_set[0], self.rewards, v)
         else:
             best_pw = self.q(s, act_set[0], self.rewards, v)
-            print('===ACT', act_set[0])
-            print('===BEST', best_pw)
             for a in act_set[1:]:
                 qq = self.q(s, a, self.rewards, v)
                 best_pw = max_piecewise(best_pw, qq)
-                print('===ACT', a)
-                print('===BEST', qq)
             best_pw.simplify()
             V_bar = best_pw
         # for dawdling
@@ -279,7 +276,7 @@ class MDP(object):
                 # roots = diff_p.real_roots()
                 roots = np.roots(diff_p.coef)
                 roots = roots.real[abs(roots.imag) < 1e-5]
-                print('roots:', roots)
+                # print('roots:', roots)
                 if len(roots):
                     root = float(roots[0])
                     if new_bounds[count - 1] < root < new_bounds[count + 1]:
@@ -304,14 +301,14 @@ class MDP(object):
         # print('state: ', s, '-', m[0], 'abs/rel: ', m[1], 'prob: ', m[2], 'outcomes: ', outcomes[m])
         Q = PiecewisePolynomial([P([0])], self.time_horizon)
         for miu in outcomes:
-            print('state: ', s, '-', self.mius[miu][0], 'abs/rel: ', self.mius[miu][1], 'prob: ', self.mius[miu][2], 'outcomes: ', outcomes[miu])
+            # print('state: ', s, '-', self.mius[miu][0], 'abs/rel: ', self.mius[miu][1], 'prob: ', self.mius[miu][2], 'outcomes: ', outcomes[miu])
             if self.mius[miu][1] == ABS:
                 U = r[miu] + U_ABS(self.mius[miu][2], v[self.mius[miu][0]])
             elif self.mius[miu][1] == REL:
                 U = r[miu] + U_REL(self.mius[miu][2], v[self.mius[miu][0]])
             else:
                 raise ValueError('The type of the miu time distribution function is wrong')
-            print('===U', U)
+            # print('U=', U)
             Q += outcomes[miu] * U
         if self.lazy:
             if self.pwc:
@@ -319,4 +316,5 @@ class MDP(object):
             else:
                 Q = Q.to_constant_function_approximation()
         # return sum([outcomes[miu] * u(miu, r, v) for miu in outcomes])
+        # print('q=', Q)
         return Q

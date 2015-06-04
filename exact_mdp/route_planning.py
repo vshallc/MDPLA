@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from exact_mdp.mdp import *
-
+import time
 
 def init_mdp():
     state = [State('Home'),
@@ -40,25 +40,28 @@ def init_mdp():
 
 
 def main():
-    mdp = init_mdp()
-    # test MDP
-    u = mdp.value_iteration()
-    for s in u:
-        print(s, u[s])
-    bd = u[mdp.states[0]].bounds
-    print(bd)
-    t = []
-    c = 0
-    while c < len(bd) - 1:
-        stp = (bd[c + 1] - bd[c]) / 10.0
-        for itv in np.arange(bd[c], bd[c + 1], stp):
-            t.append(itv)
-        c += 1
-    t.append(bd[-1])
-    v = [u[mdp.states[0]](tt) for tt in t]
-    print(t, v)
-    plt.plot(t, v)
-    plt.show()
+    start_time=time.time()
+    for i in range(100):
+        mdp = init_mdp()
+        # test MDP
+        u = mdp.value_iteration()
+    print("--- %s seconds ---" % (time.time() - start_time))
+    # for s in u:
+    #     print(s, u[s])
+    # bd = u[mdp.states[0]].bounds
+    # print(bd)
+    # t = []
+    # c = 0
+    # while c < len(bd) - 1:
+    #     stp = (bd[c + 1] - bd[c]) / 2.0
+    #     for itv in np.arange(bd[c], bd[c + 1], stp):
+    #         t.append(itv)
+    #     c += 1
+    # t.append(bd[-1])
+    # v = [u[mdp.states[0]](tt) for tt in t]
+    # print(t, v)
+    # plt.plot(t, v)
+    # plt.show()
 
 
 if __name__ == "__main__":

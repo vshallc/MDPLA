@@ -72,5 +72,5 @@ def value_iteration(mdp):
             delta = max(delta, abs(u1[s] - u[s]))
         i +=1
         if delta == 0:
-            print('dis:', i)
+            # print('dis:', i)
             return u

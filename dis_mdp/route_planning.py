@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import datetime
 from scipy.stats import *
 from dis_mdp.mdp import *
+import time
 
 t2n = lambda hh, mm: hh * 60 + mm
 
@@ -142,28 +143,31 @@ def init_rewards(states):
 
 
 def main():
-    print('Initializing states...')
-    states = init_states()
-    states = [s for sub in states for s in sub]
-    print('Initializing rewards...')
-    rewards = init_rewards(states)
-    print('Initialization done')
-    # for i in range(len(states)):
-    #     print(str(i) + ' ' + str(states[i]))
-    # states[48].print_detail()
-    mdp = MDP(states, rewards, states[0], set(states[86:129]))
-    u = value_iteration(mdp)
-    for i in range(3 * 43):
-        print(states[i], u[states[i]])
-    v = [u[s] for s in states[0:43]]
-    t = [s.time for s in states[0:43:6]]
-    # t = [datetime.time(hh, mm) for hh in range(7,14) for mm in range(0,60,10)]
-    # t.append(datetime.time(14, 00))
-    # print(v)
-    # print(t)
-    plt.plot(range(len(v)), v, 'ro')
-    plt.xticks(range(0, len(v), 6), t, size='small')
-    plt.show()
+    # print('Initializing states...')
+    start_time=time.time()
+    for i in range(1):
+        states = init_states()
+        states = [s for sub in states for s in sub]
+        # print('Initializing rewards...')
+        rewards = init_rewards(states)
+        # print('Initialization done')
+        # for i in range(len(states)):
+        #     print(str(i) + ' ' + str(states[i]))
+        # states[48].print_detail()
+        mdp = MDP(states, rewards, states[0], set(states[86:129]))
+        u = value_iteration(mdp)
+    print("--- %s seconds ---" % (time.time() - start_time))
+    # for i in range(3 * 43):
+    #     print(states[i], u[states[i]])
+    # v = [u[s] for s in states[0:43]]
+    # t = [s.time for s in states[0:43:6]]
+    # # t = [datetime.time(hh, mm) for hh in range(7,14) for mm in range(0,60,10)]
+    # # t.append(datetime.time(14, 00))
+    # # print(v)
+    # # print(t)
+    # plt.plot(range(len(v)), v, 'ro')
+    # plt.xticks(range(0, len(v), 6), t, size='small')
+    # plt.show()
 
 if __name__ == "__main__":
     main()
